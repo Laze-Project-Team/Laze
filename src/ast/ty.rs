@@ -2,11 +2,13 @@ use super::field;
 
 pub type Type = Box<Type_>;
 
+#[derive(Clone)]
 pub struct Type_ {
     pos: (i32, i32),
     data: TypeData,
 }
 
+#[derive(Clone)]
 pub enum TypeData {
     Void,
     Name(String),

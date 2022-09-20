@@ -4,11 +4,13 @@ pub type StmList = Vec<Stm>;
 
 pub type Stm = Box<Stm_>;
 
+#[derive(Clone)]
 pub struct Stm_ {
     pos: (i32, i32),
     data: StmData,
 }
 
+#[derive(Clone)]
 pub enum StmData {
     Compound(StmList),
     Assign(String, ty::Type, exp::Exp),

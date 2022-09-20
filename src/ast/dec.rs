@@ -3,11 +3,13 @@ use super::{exp, field, op, stm, ty};
 pub type Dec = Box<Dec_>;
 pub type DecList = Vec<Dec>;
 
+#[derive(Clone)]
 pub struct Dec_ {
     pos: (i32, i32),
     data: DecData,
 }
 
+#[derive(Clone)]
 pub enum DecData {
     Func(String, field::FieldList, ty::Type, stm::Stm),
     Oper(op::Oper, field::FieldList, ty::Type, stm::Stm),
@@ -93,9 +95,29 @@ pub enum MemberSpecifier {
     Private,
 }
 
-pub struct ClassMember {
+impl Clone for MemberSpecifier {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Public => Self::Public,
+            Self::Private => Self::Private,
+        }
+    }
+}
+
+pub struct ClassMember_ {
     specifier: MemberSpecifier,
     dec: Dec,
+}
+
+pub type ClassMember = Box<ClassMember_>;
+
+impl Clone for ClassMember_ {
+    fn clone(&self) -> Self {
+        Self {
+            specifier: self.specifier.clone(),
+            dec: self.dec.clone(),
+        }
+    }
 }
 
 pub type ClassMemberList = Vec<ClassMember>;

@@ -3,12 +3,5 @@
 version = 3
 
 [[package]]
-name = "Laze"
-version = "0.1.0"
-dependencies = [
- "peg_parser",
-]
-
-[[package]]
 name = "peg_parser"
 version = "0.1.0"

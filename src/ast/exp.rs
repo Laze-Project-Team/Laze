@@ -8,6 +8,16 @@ pub struct Exp_ {
     data: ExpData,
 }
 
+impl Clone for Box<Exp_> {
+    fn clone(&self) -> Self {
+        Box::new(Exp_ {
+            pos: self.pos.clone(),
+            data: self.data.clone(),
+        })
+    }
+}
+
+#[derive(Clone)]
 pub enum ExpData {
     Int(i64),
     Addr(i32),

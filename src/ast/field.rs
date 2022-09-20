@@ -1,8 +1,9 @@
 use super::ty;
 
-type Field = Box<Field_>;
+pub type Field = Box<Field_>;
 pub type FieldList = Vec<Field>;
 
+#[derive(Clone)]
 pub struct Field_ {
     pos: (i32, i32),
     var: String,
