@@ -7,7 +7,7 @@ use crate::{Parser, ParserData};
 
 pub type Matcher<T> = Rc<dyn Fn(&mut Parser<T>) -> Result<String, ()>>;
 
-pub fn parse_str<T: ParserData + Clone>(str: String) -> Matcher<T> {
+pub fn parse_str<T: ParserData + Clone + 'static>(str: String) -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
         if str == "\\n" {
             // println!("parse_str \\n");
@@ -28,7 +28,7 @@ pub fn parse_str<T: ParserData + Clone>(str: String) -> Matcher<T> {
     });
 }
 
-pub fn parse_any<T: ParserData + Clone>() -> Matcher<T> {
+pub fn parse_any<T: ParserData + Clone + 'static>() -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
         // println!("parse_any");
         if parser.input.len() > 0 {
@@ -74,7 +74,7 @@ fn get_char_range(range: String) -> Vec<char> {
     range_chars
 }
 
-pub fn parse_range<T: ParserData + Clone>(range: String) -> Matcher<T> {
+pub fn parse_range<T: ParserData + Clone + 'static>(range: String) -> Matcher<T> {
     let range_chars: Vec<char>;
     if range.contains('-') {
         range_chars = get_char_range(range);

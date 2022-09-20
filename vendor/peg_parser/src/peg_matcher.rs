@@ -7,6 +7,7 @@ use super::{combinator::Matcher, extracter::*};
 #[derive(Clone)]
 pub enum PegMatcher<T: ParserData + Clone> {
     Rules(Vec<(String, Matcher<T>)>),
+    #[allow(dead_code)]
     Rule((String, Matcher<T>)),
     Matcher(Matcher<T>),
     Matchers(Vec<Matcher<T>>),

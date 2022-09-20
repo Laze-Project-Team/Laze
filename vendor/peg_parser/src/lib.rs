@@ -6,26 +6,42 @@ mod test_combinator;
 mod test_peg_parser;
 
 use std::collections::HashMap;
-use std::io::{stderr, Write};
 use std::u32;
 
+use combinator::parse_ref;
 use parser::init_peg_parser;
+use peg_matcher::PegMatcher;
 
 use crate::combinator::Matcher;
 
 pub struct PegParser<T: Clone + ParserData + 'static> {
-    parser: Parser<T>,
+    peg_parser: Parser<PegMatcher<T>>,
 }
 
 impl<T: Clone + ParserData + 'static> PegParser<T> {
     pub fn new() -> Self {
         PegParser {
-            parser: init_peg_parser(),
+            peg_parser: init_peg_parser::<PegMatcher<T>>(),
         }
     }
-    // pub fn parse() -> Result<T, String> {
-
-    // }
+    pub fn parse_parser(&mut self, parser_rules: &str) -> Result<Parser<T>, &str> {
+        let rules = match self.peg_parser.parse(&parser_rules) {
+            Ok(rules) => match rules {
+                PegMatcher::Rules(a) => a,
+                _ => {
+                    panic!("Parse failed.");
+                }
+            },
+            Err(str) => {
+                return Err(str);
+            }
+        };
+        let mut output_parser = Parser::new();
+        for rule in rules {
+            output_parser.add_rule(rule.0.clone(), rule.1.clone());
+        }
+        Ok(output_parser)
+    }
 }
 
 pub trait ParserData: Sized + Clone {
@@ -45,7 +61,7 @@ pub struct Parser<T: Clone + ParserData> {
     pub input: String,
 }
 
-impl<T: Clone + ParserData> Parser<T> {
+impl<T: Clone + ParserData + 'static> Parser<T> {
     pub fn new() -> Parser<T> {
         Parser {
             grammar_list: HashMap::new(),
@@ -116,22 +132,26 @@ impl<T: Clone + ParserData> Parser<T> {
             self.input.remove(0);
         }
     }
-    pub fn parse(&mut self, string: &str) -> Result<String, ()> {
+    pub fn parse(&mut self, string: &str) -> Result<T, &str> {
         self.input = string.clone().to_string();
         self.data.push(HashMap::new());
-        let grammar_list = self.grammar_list.clone();
-        match grammar_list.get("Start") {
-            Some(matcher) => match matcher(self) {
-                Ok(str) => {
-                    println!("{:?}", self.data.last().unwrap().keys());
-                    Ok(str)
-                }
-                Err(()) => Err(()),
-            },
-            None => {
-                let _ = writeln!(stderr(), "Rule Start does not exist in the grammar.");
-                Err(())
+        match parse_ref("Start".to_string(), None)(self) {
+            Err(()) => {
+                return Err("Parse failed.");
             }
+            _ => {}
+        }
+        if self.data.len() == 1 {
+            match self.data[0].get("Start") {
+                Some(data) => {
+                    return Ok(data.clone());
+                }
+                None => {
+                    return Err("Parse failed: Could not get Start item.");
+                }
+            }
+        } else {
+            return Err("Parse failed: Stack does not exist.");
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::parser::parser::Data;
+use peg_parser::{Parser, ParserData};
 
 use super::{
     dec::{self, Dec},
@@ -21,14 +21,14 @@ pub enum ASTNode {
     None,
 }
 
-impl Data for ASTNode {
+impl ParserData for ASTNode {
     fn string(str: String) -> Self {
         Self::String(str)
     }
     fn null() -> Self {
         Self::None
     }
-    fn data(name: String, parser: &mut crate::parser::parser::Parser<Self>) -> Self {
+    fn data(name: String, parser: &mut Parser<Self>) -> Self {
         // need to write code
         Self::None
     }

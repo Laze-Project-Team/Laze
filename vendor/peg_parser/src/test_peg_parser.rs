@@ -148,20 +148,17 @@ fn test_peg_parser() {
     }
     let mut peg_parser = init_peg_parser::<PegMatcher<GreetingData>>();
     let rules = match peg_parser.parse(PEG) {
-        Ok(str) => {
-            println!("Parsed: \n{}", str);
-            match peg_parser.data.last() {
-                Some(r) => match &r["Rules"] {
-                    PegMatcher::Rules(a) => a,
-                    _ => {
-                        panic!("Parse failed.");
-                    }
-                },
-                None => {
+        Ok(str) => match peg_parser.data.last() {
+            Some(r) => match &r["Rules"] {
+                PegMatcher::Rules(a) => a,
+                _ => {
                     panic!("Parse failed.");
                 }
+            },
+            None => {
+                panic!("Parse failed.");
             }
-        }
+        },
         Err(()) => {
             panic!("Parse failed at position {}.", peg_parser.pos);
         }
