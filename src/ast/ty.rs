@@ -1,55 +1,57 @@
-use super::field;
+use super::{exp::Exp, field};
 
+pub type TypeList = Vec<Box<Type_>>;
 pub type Type = Box<Type_>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Type_ {
-    pos: (i32, i32),
-    data: TypeData,
+    pub pos: u32,
+    pub data: TypeData,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TypeData {
     Void,
     Name(String),
-    Array(Type, i32),
+    Array(Type, Exp),
     Pointer(Type),
     Template(String, Vec<Type>),
     Func(field::FieldList, Type),
+    None,
 }
 
 impl Type_ {
-    fn VoidType(pos: (i32, i32)) -> Type {
+    pub fn void_type(pos: u32) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Void,
         })
     }
-    fn NameType(pos: (i32, i32), name: &str) -> Type {
+    pub fn name_type(pos: u32, name: String) -> Type {
         Box::new(Type_ {
             pos,
-            data: TypeData::Name(name.to_string()),
+            data: TypeData::Name(name),
         })
     }
-    fn ArraTypey(pos: (i32, i32), ty: Type, size: i32) -> Type {
+    pub fn array_type(pos: u32, ty: Type, size: Exp) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Array(ty, size),
         })
     }
-    fn PoinTypeter(pos: (i32, i32), ty: Type) -> Type {
+    pub fn pointer_type(pos: u32, ty: Type) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Pointer(ty),
         })
     }
-    fn TempTypelate(pos: (i32, i32), name: String, tyParams: Vec<Type>) -> Type {
+    pub fn template_type(pos: u32, name: String, ty_params: Vec<Type>) -> Type {
         Box::new(Type_ {
             pos,
-            data: TypeData::Template(name, tyParams),
+            data: TypeData::Template(name, ty_params),
         })
     }
-    fn FuncType(pos: (i32, i32), params: field::FieldList, result: Type) -> Type {
+    pub fn func_type(pos: u32, params: field::FieldList, result: Type) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Func(params, result),

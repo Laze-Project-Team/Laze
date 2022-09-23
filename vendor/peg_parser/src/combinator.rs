@@ -9,16 +9,7 @@ pub type Matcher<T> = Rc<dyn Fn(&mut Parser<T>) -> Result<String, ()>>;
 
 pub fn parse_str<T: ParserData + Clone + 'static>(str: String) -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        if str == "\\n" {
-            // println!("parse_str \\n");
-            if parser.input.starts_with("\n") {
-                parser.eat("\n");
-                return Ok("\n".to_string());
-            } else {
-                return Err(());
-            }
-        }
-        println!("parse_str {:?}", str);
+        // println!("parse_str {:?}", str);
         if parser.input.starts_with(&*str) {
             parser.eat(&str);
             Ok(str.to_string())
@@ -30,7 +21,7 @@ pub fn parse_str<T: ParserData + Clone + 'static>(str: String) -> Matcher<T> {
 
 pub fn parse_any<T: ParserData + Clone + 'static>() -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_any");
+        // println!("parse_any {}", parser.input);
         if parser.input.len() > 0 {
             let ch = parser.input.chars().nth(0).unwrap();
             if ch == '\n' {
@@ -184,7 +175,7 @@ pub fn parse_ref<T: ParserData + Clone + 'static>(
     save_name: Option<String>,
 ) -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        println!("parse_ref {}", name);
+        // println!("parse_ref {}", name);
         let matcher: Matcher<T>;
         if let Some(m) = parser.grammar_list.get(name.as_str()) {
             matcher = m.clone();
@@ -194,11 +185,12 @@ pub fn parse_ref<T: ParserData + Clone + 'static>(
         parser.enter_scope();
         match matcher(parser) {
             Ok(str) => {
-                let data = T::data(name.clone().to_string(), parser);
+                // println!("parsed: {str}");
+                let data = T::data(name.clone(), parser);
                 parser.exit_scope();
                 match save_name.clone() {
-                    Some(str) => parser.add_data(str.to_string(), data),
-                    None => parser.add_data(name.to_string(), data),
+                    Some(str) => parser.add_data(str.clone(), data),
+                    None => parser.add_data(name.clone(), data),
                 }
                 Ok(str)
             }

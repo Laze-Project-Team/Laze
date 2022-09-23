@@ -1,0 +1,103 @@
+Start = DecList
+
+DecList = Dec+
+Dec = VarDec::dec / FuncDec::dec / TemplateDec::dec / ClassDec::dec / JsImportDec::dec / JsExportDec::dec / OperDec::dec
+
+VarDecNoInit = Type ":" Var ";"
+VarDecInit = Type ":" Var "=" Exp ";"
+VarDec = VarDecNoInit::vardec / VarDecInit::vardec
+FuncDec = "関数" ":" ID "(" FieldList::params ")" "=>" "(" FieldList::result ")" "{" StmList "}"
+TemplateDec = "型" "<" IDList ">" Dec
+ClassDec = "クラス" ":" ID "{" ClassMemberList "}" / "クラス" ":" ID "<-" IDList "{" ClassMemberList "}"
+JsImportDec = "関数" ":" ID "(" FieldList::params ")" "=>" "(" FieldList::result ")" "=" "js読み込み" "(" String::module "," String::name ")" ";"
+JsExportDec = "js書き出し" "(" ID "," String ")" ";"
+OperDec = "演算子:" ID "(" FieldList::params ")" "=>" "(" FieldList::result ")" "{" StmList "}"
+
+ClassMemberList = (PublicMembers::members / PrivateMembers::members)+
+PublicMembers = "公開" ":" DecList / DecList
+PrivateMembers = "非公開" ":" DecList
+
+FieldList = (Field)* ("," Field)*
+Field = Type ":" Var
+
+ExpList = (Exp::exp)* ("," Exp::exp)*
+Exp = BinOpExp::exp
+BinOpExp = CompOpExp::exp ((AndOp::op / OrOp::op) CompOpExp::exp)*
+CompOpExp = SumExp::exp ((EqOp::op / NeOp::op / LtOp::op / LeOp::op / GtOp::op / GeOp::op) SumExp::exp)*
+SumExp = ProdExp::exp ((AddOp::op / SubOp::op) ProdExp::exp)*
+ProdExp = UnaryOpExp::exp ((MulOp::op / DivOp::op) UnaryOpExp::exp)*
+UnaryOpExp = (SubOp::op / DerefOp::op / AddressOp::op / NotOp::op)* PostfixExp::exp
+PostfixExp = PrimaryExp::exp ( CallSuffix::suffix / DotSuffix::suffix / ArrowSuffix::suffix / SubscriptSuffix::suffix )*
+PrimaryExp = ConstantExp::exp / IDExp::exp / ParenExp::exp / ArrayExp::exp / FuncExp::exp / SizeOfExp::exp
+ConstantExp = IntExp::exp / RealExp::exp / StringExp::exp
+
+ArrayExp = "[" ExpList "]"
+ParenExp = "(" Exp::exp ")"
+SizeOfExp = "メモリサイズ" "(" Exp::exp ")"
+FuncExp = "(" FieldList::params ")" "=>" "(" FieldList::result ")" Stm
+
+AndOp = "&&"
+OrOp = "||"
+EqOp = "=="
+NeOp = "!="
+LtOp = "<"
+LeOp = "<="
+GtOp = ">"
+GeOp = ">="
+AddOp = "+"
+SubOp = "-"
+MulOp = "*"
+DivOp = "/"
+DerefOp = "*"
+AddressOp = "&"
+NotOp = "!"
+CallSuffix = "(" ExpList::explist ")"
+DotSuffix = "." IDExp::exp
+ArrowSuffix = "->" IDExp::exp
+SubscriptSuffix = "[" Exp::exp "]"
+
+IntExp = Integer
+RealExp = Real
+StringExp = String
+IDExp = ID
+
+StmList = Stm*
+Stm = DecStm::stm / AssignStm::stm / CompoundStm::stm / IfStm::stm / WhileStm::stm / UntilStm::stm / RepeatStm::stm / BreakStm::stm / ContinueStm::stm / ReturnStm::stm / LoopStm::stm / ExpStm::stm
+CompoundStm = "{" StmList "}"
+DecStm = Dec
+AssignStm = Var "=" Exp ";"
+IfStm = IfElseList
+WhileStm = "(" Exp ")" "の間" Stm
+UntilStm = "(" Exp ")" "まで" Stm
+RepeatStm = "(" Exp ")" "回繰り返す" Stm
+BreakStm = "抜ける" ";"
+ContinueStm = "次へ" ";"
+ReturnStm = "終了" "(" Exp ")" ";" / "終了" "(" ")" ";"
+LoopStm = "無限ループ" Stm
+ExpStm = Exp ";"
+
+IfElseList = If::ifelse ( ElseIf::ifelse )* Else::ifelse / If::ifelse (ElseIf::ifelse)*
+If = "もし" "(" Exp ")" "ならば" Stm
+ElseIf = "でなければもし" "(" Exp ")" "ならば" Stm
+Else = "でなければ" Stm
+
+Type = PointerType::type / ArrayType::type
+PrimaryType = NameType::type / ParenType::type / GenericsType::type
+
+PointerType = PrimaryType "*"
+ArrayType = PrimaryType ( "[" Exp::exp "]" )*
+ParenType = "(" Type ")"
+NameType = { "整数" / "実数" / "文字" / "真偽" / ID : type }
+GenericsType = ID "<" TypeList ">"
+
+Var = PointerVar::var
+SimpleVar = ID
+CallVar = SimpleVar ("(" ExpList::exp ")")*
+ArrayVar = CallVar ("[" Exp::exp "]")*
+PointerVar = {"*" ArrayVar / ArrayVar : pointer}
+
+IDList = ID ("," ID)*
+ID = { [㐀-龯ぁ-んァ-ヶa-zA-Z_ー] [㐀-龯ぁ-んァ-ヶa-zA-Z0-9０-９_ー]* " "* : id }
+Integer = { [0-9]+ " "* : int }
+Real = { Integer "." Integer : real }
+String = { "\"" ( !"\"" . )* "\"" : string }

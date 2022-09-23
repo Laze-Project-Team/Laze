@@ -1,16 +1,16 @@
 mod combinator;
 mod extracter;
-mod parser;
 mod peg_matcher;
+mod peg_rules;
 mod test_combinator;
-mod test_peg_parser;
+pub mod test_peg_parser;
 
 use std::collections::HashMap;
 use std::u32;
 
 use combinator::parse_ref;
-use parser::init_peg_parser;
 use peg_matcher::PegMatcher;
+use peg_rules::init_peg_parser;
 
 use crate::combinator::Matcher;
 
@@ -93,13 +93,14 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
             }
         }
     }
+    // filter is_null
     pub fn get_data(&mut self, name: String) -> Option<T> {
         // println!("{}", size_of::<HashMap<&str, T>>());
-        println!(
-            "{:?}, {}",
-            self.data.last().unwrap().keys(),
-            self.data.len()
-        );
+        // println!(
+        //     "{:?}, {}",
+        //     self.data.last().unwrap().keys(),
+        //     self.data.len()
+        // );
         match self.data.last() {
             Some(map) => {
                 return match map.get(&name) {
@@ -126,18 +127,20 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
         val
     }
     pub fn eat(&mut self, str: &str) {
-        println!("eaten {}", str);
+        // println!("eaten {}", str);
         self.pos += str.chars().count() as u32;
         for _ in 0..str.chars().count() {
             self.input.remove(0);
         }
+        // println!("Remaining::: {}", self.input);
     }
     pub fn parse(&mut self, string: &str) -> Result<T, &str> {
         self.input = string.clone().to_string();
         self.data.push(HashMap::new());
         match parse_ref("Start".to_string(), None)(self) {
             Err(()) => {
-                return Err("Parse failed.");
+                println!("Could not parse: {}", self.input);
+                return Err("Start Parse failed.");
             }
             _ => {}
         }

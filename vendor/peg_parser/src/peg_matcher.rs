@@ -55,20 +55,39 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
         Self::None
     }
     fn data(name: String, parser: &mut Parser<Self>) -> Self {
+        // println!("Reducing: {}", name);
         match name.as_str() {
-            "StringContent" => Self::String(extract_string_data(
-                parser.get_data("content".to_string()),
-                "content",
-                name.as_str(),
-            )),
-            "String" => Self::Matcher(parse_str(
-                extract_string_data(
-                    parser.get_data("StringContent".to_string()),
-                    "StringContent",
+            "StringContent" => {
+                let content = extract_string_data(
+                    parser.get_data("content".to_string()),
+                    "content",
                     name.as_str(),
-                )
-                .clone(),
-            )),
+                );
+                let newcontent = match content.as_str() {
+                    "\\\"" => "\"".to_string(),
+                    "\\\\" => "\\".to_string(),
+                    "\\n" => "\n".to_string(),
+                    str => str.to_string(),
+                };
+                // println!("StringContent: {newcontent}");
+                Self::String(newcontent)
+            }
+            "String" => Self::Matcher(parse_seq(vec![
+                parse_str(
+                    extract_string_data(
+                        parser.get_data("StringContent".to_string()),
+                        "StringContent",
+                        name.as_str(),
+                    )
+                    .clone(),
+                ),
+                parse_many(parse_or(vec![
+                    parse_str(" ".to_string()),
+                    parse_str("\n".to_string()),
+                    parse_str("\t".to_string()),
+                    parse_str("\r\n".to_string()),
+                ])),
+            ])),
             "RangeContent" => Self::String(extract_string_data(
                 parser.get_data("content".to_string()),
                 "content",
@@ -128,6 +147,7 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                     name.as_str(),
                 )]),
             },
+            "AnyToken" => Self::Matcher(parse_any()),
             "RawToken" => Self::Matcher(extract_matcher_data(
                 parser.get_data("tokendata".to_string()),
                 "tokendata",
@@ -143,7 +163,11 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                 "RawToken",
                 name.as_str(),
             ))),
-            // look in parent scope
+            "NotToken" => Self::Matcher(parse_not(extract_matcher_data(
+                parser.get_data("RawToken".to_string()),
+                "RawToken",
+                name.as_str(),
+            ))),
             "Tokens" => match parser.get_data_from_parent_scope("Tokens".to_string()) {
                 Some(matcher) => match matcher {
                     PegMatcher::Matcher(m) => {
@@ -258,6 +282,11 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
             "Rules" => Self::Rules(extract_rules_data(
                 parser.get_data("Rule".to_string()),
                 "Rule",
+                name.as_str(),
+            )),
+            "Start" => Self::Rules(extract_rules_data(
+                parser.get_data("Rules".to_string()),
+                "Rules",
                 name.as_str(),
             )),
             str => {

@@ -1,32 +1,33 @@
-use super::{exp, field, op, stm, ty};
+use super::{exp, field, stm, ty, var::Var};
 
 pub type Dec = Box<Dec_>;
 pub type DecList = Vec<Dec>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Dec_ {
-    pos: (i32, i32),
-    data: DecData,
+    pub pos: u32,
+    pub data: DecData,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DecData {
-    Func(String, field::FieldList, ty::Type, stm::Stm),
-    Oper(op::Oper, field::FieldList, ty::Type, stm::Stm),
-    JsImport(String, field::FieldList, ty::Type, String, String),
+    Func(String, field::FieldList, field::FieldList, stm::Stm),
+    Oper(String, field::FieldList, field::FieldList, stm::Stm),
+    JsImport(String, field::FieldList, field::FieldList, String, String),
     JsExport(String, String),
 
-    Var(String, ty::Type, exp::Exp, bool),
+    Var(Var, ty::Type, exp::Exp),
     Class(String, ClassMemberList, Vec<String>),
     Template(Dec, Vec<String>),
+    None,
 }
 
 impl Dec_ {
-    fn FuncDec(
-        pos: (i32, i32),
+    pub fn func_dec(
+        pos: u32,
         name: String,
         params: field::FieldList,
-        result: ty::Type,
+        result: field::FieldList,
         body: stm::Stm,
     ) -> Dec {
         Box::new(Dec_ {
@@ -34,11 +35,11 @@ impl Dec_ {
             data: DecData::Func(name, params, result, body),
         })
     }
-    fn OperDec(
-        pos: (i32, i32),
-        op: op::Oper,
+    pub fn oper_dec(
+        pos: u32,
+        op: String,
         params: field::FieldList,
-        result: ty::Type,
+        result: field::FieldList,
         body: stm::Stm,
     ) -> Dec {
         Box::new(Dec_ {
@@ -46,11 +47,11 @@ impl Dec_ {
             data: DecData::Oper(op, params, result, body),
         })
     }
-    fn JsImportDec(
-        pos: (i32, i32),
+    pub fn js_import_dec(
+        pos: u32,
         name: String,
         params: field::FieldList,
-        result: ty::Type,
+        result: field::FieldList,
         module: String,
         id: String,
     ) -> Dec {
@@ -59,65 +60,68 @@ impl Dec_ {
             data: DecData::JsImport(name, params, result, module, id),
         })
     }
-    fn JsExportDec(pos: (i32, i32), name: String, exportName: String) -> Dec {
+    pub fn js_export_dec(pos: u32, name: String, export_name: String) -> Dec {
         Box::new(Dec_ {
             pos,
-            data: DecData::JsExport(name, exportName),
+            data: DecData::JsExport(name, export_name),
         })
     }
-    fn VarDec(pos: (i32, i32), name: String, ty: ty::Type, init: exp::Exp, isEscape: bool) -> Dec {
+    pub fn var_dec(pos: u32, var: Var, ty: ty::Type, init: exp::Exp) -> Dec {
         Box::new(Dec_ {
             pos,
-            data: DecData::Var(name, ty, init, isEscape),
+            data: DecData::Var(var, ty, init),
         })
     }
-    fn ClassDec(
-        pos: (i32, i32),
+    pub fn class_dec(
+        pos: u32,
         name: String,
-        classMembers: ClassMemberList,
+        class_members: ClassMemberList,
         inheritance: Vec<String>,
     ) -> Dec {
         Box::new(Dec_ {
             pos,
-            data: DecData::Class(name, classMembers, inheritance),
+            data: DecData::Class(name, class_members, inheritance),
         })
     }
-    fn TemplateDec(pos: (i32, i32), dec: Dec, tyParams: Vec<String>) -> Dec {
+    pub fn template_dec(pos: u32, dec: Dec, ty_params: Vec<String>) -> Dec {
         Box::new(Dec_ {
             pos,
-            data: DecData::Template(dec, tyParams),
+            data: DecData::Template(dec, ty_params),
         })
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum MemberSpecifier {
     Public,
     Private,
 }
 
-impl Clone for MemberSpecifier {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Public => Self::Public,
-            Self::Private => Self::Private,
-        }
-    }
-}
-
+#[derive(Clone, Debug)]
 pub struct ClassMember_ {
-    specifier: MemberSpecifier,
-    dec: Dec,
+    pub specifier: MemberSpecifier,
+    pub dec: Dec,
 }
 
 pub type ClassMember = Box<ClassMember_>;
+pub type ClassMemberList = Vec<ClassMember>;
 
-impl Clone for ClassMember_ {
-    fn clone(&self) -> Self {
-        Self {
-            specifier: self.specifier.clone(),
-            dec: self.dec.clone(),
+pub trait MemberList {
+    fn new_list(declist: Vec<Dec>, specifier: MemberSpecifier) -> ClassMemberList;
+    fn append_list(&mut self, declist: ClassMemberList);
+}
+
+impl MemberList for Vec<ClassMember> {
+    fn new_list(declist: Vec<Dec>, specifier: MemberSpecifier) -> ClassMemberList {
+        let mut new_list: ClassMemberList = vec![];
+        for dec in declist {
+            new_list.push(Box::new(ClassMember_ { specifier, dec }));
+        }
+        new_list
+    }
+    fn append_list(&mut self, declist: ClassMemberList) {
+        for dec in declist {
+            self.push(dec);
         }
     }
 }
-
-pub type ClassMemberList = Vec<ClassMember>;

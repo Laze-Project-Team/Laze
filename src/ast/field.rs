@@ -1,23 +1,25 @@
-use super::ty;
+use super::{ty, var::Var};
 
 pub type Field = Box<Field_>;
 pub type FieldList = Vec<Field>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Field_ {
-    pos: (i32, i32),
-    var: String,
-    ty: ty::Type,
-    escape: bool,
+    pub pos: u32,
+    pub data: FieldData,
+}
+
+#[derive(Clone, Debug)]
+pub enum FieldData {
+    Field(Var, ty::Type),
+    None,
 }
 
 impl Field_ {
-    fn newField(pos: (i32, i32), var: String, ty: ty::Type, escape: bool) -> Field {
+    pub fn new(pos: u32, var: Var, ty: ty::Type) -> Field {
         Box::new(Field_ {
             pos,
-            var,
-            ty,
-            escape,
+            data: FieldData::Field { 0: var, 1: ty },
         })
     }
 }

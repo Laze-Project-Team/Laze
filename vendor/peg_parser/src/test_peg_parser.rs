@@ -2,7 +2,7 @@
 use std::io::{stderr, Write};
 
 #[allow(unused_imports)]
-use super::{parser::init_peg_parser, Parser};
+use super::{peg_rules::init_peg_parser, Parser};
 #[allow(unused_imports)]
 use crate::combinator::parse_or;
 #[allow(unused_imports)]
@@ -12,8 +12,8 @@ use crate::ParserData;
 #[allow(dead_code)]
 const PEG: &str = r#"GreetWord = {"Hi" / "Hello" / "Goodbye": word}
 ID = {[㐀-龯ぁ-んァ-ヶa-zA-Z_ー]+: id}
-Greeting = GreetWord " "+ ID "!" / GreetWord " "+ ID " "+ "and" " "+ ID "!"
-Greetings = Greeting ( "\n" Greeting )*
+Greeting = GreetWord ID "!" / GreetWord ID " "+ "and" ID "!"
+Greetings = Greeting ( Greeting )*
 Start = Greetings"#;
 
 // need to make capture string function
@@ -25,7 +25,7 @@ Goodbye 永田!";
 
 #[test]
 fn test_peg_parser() {
-    #[derive(Clone)]
+    #[derive(Clone, Debug, PartialEq)]
     enum GreetingData {
         StringData(String),
         Greeting((String, String)),
@@ -132,6 +132,7 @@ fn test_peg_parser() {
                     },
                     None => Self::Greetings(vec![]),
                 },
+                "Start" => parser.get_data("Greetings".to_string()).expect("Start"),
                 str => {
                     let _ = writeln!(stderr(), "What is this token: {}", str);
                     Self::None
@@ -147,46 +148,33 @@ fn test_peg_parser() {
         }
     }
     let mut peg_parser = init_peg_parser::<PegMatcher<GreetingData>>();
-    let rules = match peg_parser.parse(PEG) {
-        Ok(str) => match peg_parser.data.last() {
-            Some(r) => match &r["Rules"] {
-                PegMatcher::Rules(a) => a,
-                _ => {
-                    panic!("Parse failed.");
-                }
-            },
-            None => {
-                panic!("Parse failed.");
-            }
-        },
-        Err(()) => {
-            panic!("Parse failed at position {}.", peg_parser.pos);
+    let rules = match peg_parser.parse(PEG).expect("Parsing rules") {
+        PegMatcher::Rules(a) => a,
+        _ => {
+            panic!("Parse failed.");
         }
     };
+    println!("Parsed rules");
     let mut test_parser: Parser<GreetingData> = Parser::new();
     for rule in rules {
         test_parser.add_rule(rule.0.clone(), rule.1.clone());
     }
     match test_parser.parse(GREETING) {
-        Ok(str) => {
-            assert_eq!(str, GREETING);
-            println!("Parsed: \n{}", str);
-        }
-        Err(()) => {
-            panic!("Parse failed at position {}.", test_parser.pos);
-        }
-    }
-    match test_parser.get_data("Greetings".to_string()) {
-        Some(greetings) => match greetings {
-            GreetingData::Greetings(data) => {
-                for s in &data {
-                    println!("Name: {}, Greeting: {}", s.0, s.1);
+        Ok(greetings) => {
+            assert_eq!(test_parser.input, "");
+            match greetings {
+                GreetingData::Greetings(data) => {
+                    for s in &data {
+                        println!("Name: {}, Greeting: {}", s.0, s.1);
+                    }
+                }
+                _ => {
+                    panic!("Greetings is not of right type -> Parse Failed.")
                 }
             }
-            _ => {
-                panic!("Greetings is not of right type -> Parse Failed.")
-            }
-        },
-        None => panic!("Greetings could not be found. -> Parse Failed."),
+        }
+        Err(_) => {
+            panic!("Parse failed at position {}.", test_parser.pos);
+        }
     }
 }

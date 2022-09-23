@@ -1,81 +1,113 @@
-use super::{dec, exp, ty};
+use super::{
+    dec,
+    exp::{self},
+    ifelse::{self, IfElseList},
+    var::Var,
+};
 
 pub type StmList = Vec<Stm>;
 
 pub type Stm = Box<Stm_>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Stm_ {
-    pos: (i32, i32),
-    data: StmData,
+    pub pos: u32,
+    pub data: StmData,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum StmData {
     Compound(StmList),
-    Assign(String, ty::Type, exp::Exp),
+    Assign(Var, exp::Exp),
     Dec(dec::Dec),
-    // Ifelse
+    Exp(exp::Exp),
+    IfElse(ifelse::IfElseList),
     While(exp::Exp, Stm),
     For(Stm, exp::Exp, Stm, Stm),
     Call(exp::Exp, exp::ExpList),
     Return(exp::Exp),
     Loop(Stm),
     Repeat(exp::Exp, Stm),
+    Continue,
+    Break,
 
     None,
 }
 
 impl Stm_ {
-    fn CompoundStm(pos: (i32, i32), stmList: StmList) -> Stm {
+    pub fn compound_stm(pos: u32, stmlist: StmList) -> Stm {
         Box::new(Stm_ {
             pos,
-            data: StmData::Compound(stmList),
+            data: StmData::Compound(stmlist),
         })
     }
-    fn AssignStm(pos: (i32, i32), var: String, ty: ty::Type, init: exp::Exp) -> Stm {
+    pub fn assign_stm(pos: u32, var: Var, init: exp::Exp) -> Stm {
         Box::new(Stm_ {
             pos,
-            data: StmData::Assign(var, ty, init),
+            data: StmData::Assign(var, init),
         })
     }
-    fn DecStm(pos: (i32, i32), dec: dec::Dec) -> Stm {
+    pub fn dec_stm(pos: u32, dec: dec::Dec) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Dec(dec),
         })
     }
-    fn WhileStm(pos: (i32, i32), test: exp::Exp, body: Stm) -> Stm {
+    pub fn exp_stm(pos: u32, exp: exp::Exp) -> Stm {
+        Box::new(Stm_ {
+            pos,
+            data: StmData::Exp(exp),
+        })
+    }
+    pub fn ifelse_stm(pos: u32, ifelselist: IfElseList) -> Stm {
+        Box::new(Stm_ {
+            pos,
+            data: StmData::IfElse(ifelselist),
+        })
+    }
+    pub fn while_stm(pos: u32, test: exp::Exp, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::While(test, body),
         })
     }
-    fn ForStm(pos: (i32, i32), init: Stm, test: exp::Exp, incr: Stm, body: Stm) -> Stm {
+    pub fn for_stm(pos: u32, init: Stm, test: exp::Exp, incr: Stm, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::For(init, test, incr, body),
         })
     }
-    fn CallStm(pos: (i32, i32), func: exp::Exp, args: exp::ExpList) -> Stm {
+    pub fn call_stm(pos: u32, func: exp::Exp, args: exp::ExpList) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Call(func, args),
         })
     }
-    fn ReturnStm(pos: (i32, i32), val: exp::Exp) -> Stm {
+    pub fn return_stm(pos: u32, val: exp::Exp) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Return(val),
         })
     }
-    fn LoopStm(pos: (i32, i32), body: Stm) -> Stm {
+    pub fn continue_stm(pos: u32) -> Stm {
+        Box::new(Stm_ {
+            pos,
+            data: StmData::Continue,
+        })
+    }
+    pub fn break_stm(pos: u32) -> Stm {
+        Box::new(Stm_ {
+            pos,
+            data: StmData::Break,
+        })
+    }
+    pub fn loop_stm(pos: u32, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Loop(body),
         })
     }
-    fn RepeatStm(pos: (i32, i32), count: exp::Exp, body: Stm) -> Stm {
+    pub fn repeat_stm(pos: u32, count: exp::Exp, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Repeat(count, body),

@@ -5,22 +5,31 @@ use super::combinator::*;
 pub fn init_peg_parser<T: Clone + ParserData + 'static>() -> Parser<T> {
     let mut peg_parser = Parser::<T>::new();
 
+    // need to handle escape sequences
     peg_parser.add_rule(
         "StringContent".to_string(),
         capture_string(
             "content".to_string(),
-            parse_many(parse_seq(vec![
-                parse_not(parse_str("\"".to_string())),
-                parse_any(),
+            parse_many(parse_or(vec![
+                parse_seq(vec![
+                    parse_not(parse_or(vec![
+                        parse_str("\\".to_string()),
+                        parse_str("\"".to_string()),
+                    ])),
+                    parse_any(),
+                ]),
+                parse_str("\\\"".to_string()),
+                parse_str("\\n".to_string()),
+                parse_str("\\\\".to_string()),
             ])),
         ),
     );
     peg_parser.add_rule(
         "String".to_string(),
         parse_seq(vec![
-            parse_str("\"".to_string()),
+            parse_str('"'.to_string()),
             parse_ref("StringContent".to_string(), None),
-            parse_str("\"".to_string()),
+            parse_str('"'.to_string()),
         ]),
     );
     peg_parser.add_rule(
@@ -62,9 +71,11 @@ pub fn init_peg_parser<T: Clone + ParserData + 'static>() -> Parser<T> {
             parse_ref("NonTerminal".to_string(), None),
         ]),
     );
+    peg_parser.add_rule("AnyToken".to_string(), parse_str(".".to_string()));
     peg_parser.add_rule(
         "RawToken".to_string(),
         parse_or(vec![
+            parse_ref("AnyToken".to_string(), Some("tokendata".to_string())),
             parse_ref("ParenTokens".to_string(), Some("tokendata".to_string())),
             parse_ref("CaptureString".to_string(), Some("tokendata".to_string())),
             parse_ref(
@@ -90,8 +101,16 @@ pub fn init_peg_parser<T: Clone + ParserData + 'static>() -> Parser<T> {
         ]),
     );
     peg_parser.add_rule(
+        "NotToken".to_string(),
+        parse_seq(vec![
+            parse_str("!".to_string()),
+            parse_ref("RawToken".to_string(), None),
+        ]),
+    );
+    peg_parser.add_rule(
         "Token".to_string(),
         parse_or(vec![
+            parse_ref("NotToken".to_string(), Some("tokendata".to_string())),
             parse_ref("ManyToken".to_string(), Some("tokendata".to_string())),
             parse_ref(
                 "MoreThanOneToken".to_string(),
@@ -164,10 +183,10 @@ pub fn init_peg_parser<T: Clone + ParserData + 'static>() -> Parser<T> {
         parse_seq(vec![
             parse_ref("Rule".to_string(), None),
             parse_many(parse_seq(vec![
-                parse_or(vec![
+                parse_more_than_one(parse_or(vec![
                     parse_str("\r\n".to_string()),
                     parse_str("\n".to_string()),
-                ]),
+                ])),
                 parse_ref("Rule".to_string(), None),
             ])),
         ]),
