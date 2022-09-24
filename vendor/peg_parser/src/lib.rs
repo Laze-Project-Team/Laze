@@ -6,7 +6,6 @@ mod test_combinator;
 pub mod test_peg_parser;
 
 use std::collections::HashMap;
-use std::u32;
 
 use combinator::parse_ref;
 use peg_matcher::PegMatcher;
@@ -24,8 +23,8 @@ impl<T: Clone + ParserData + 'static> PegParser<T> {
             peg_parser: init_peg_parser::<PegMatcher<T>>(),
         }
     }
-    pub fn parse_parser(&mut self, parser_rules: &str) -> Result<Parser<T>, &str> {
-        let rules = match self.peg_parser.parse(&parser_rules) {
+    pub fn parse_parser(&mut self, parser_rules: String) -> Result<Parser<T>, &str> {
+        let rules = match self.peg_parser.parse(parser_rules.as_str()) {
             Ok(rules) => match rules {
                 PegMatcher::Rules(a) => a,
                 _ => {
@@ -56,9 +55,9 @@ pub struct Parser<T: Clone + ParserData> {
     pub grammar_list: HashMap<String, Matcher<T>>,
     // pub data: HashMap<String, T>,
     pub data: Vec<HashMap<String, T>>,
-    pub pos: u32,
-    pub error_pos: u32,
-    pub input: String,
+    pub pos: usize,
+    pub error_pos: usize,
+    pub source_code_size: usize,
 }
 
 impl<T: Clone + ParserData + 'static> Parser<T> {
@@ -69,7 +68,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
             data: Vec::new(),
             pos: 0,
             error_pos: 0,
-            input: "".to_string(),
+            source_code_size: 0,
         }
     }
     pub fn add_rule(&mut self, name: String, rule: Matcher<T>) {
@@ -86,6 +85,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
             // self.data
             //     .insert(self.scopes.last().unwrap().clone() + ":" + &name, data);
             let len = self.data.len();
+            // println!("{} in {}", name, len);
             if len >= 1 {
                 self.data[len - 1].insert(name, data);
             } else {
@@ -97,7 +97,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
     pub fn get_data(&mut self, name: String) -> Option<T> {
         // println!("{}", size_of::<HashMap<&str, T>>());
         // println!(
-        //     "{:?}, {}",
+        //     "{:?} in {}",
         //     self.data.last().unwrap().keys(),
         //     self.data.len()
         // );
@@ -128,18 +128,44 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
     }
     pub fn eat(&mut self, str: &str) {
         // println!("eaten {}", str);
-        self.pos += str.chars().count() as u32;
-        for _ in 0..str.chars().count() {
-            self.input.remove(0);
+        if self.pos + str.chars().count() <= self.source_code_size {
+            self.pos += str.chars().count();
+        } else {
+            println!("could not eat: {}", str);
         }
-        // println!("Remaining::: {}", self.input);
+        // println!("Remaining::: {}", self.source_code);
+    }
+    pub fn backtrace(&mut self, pos: usize, data_pos: &(usize, Vec<String>)) {
+        self.pos = pos;
+        // println!("{} and {:?}", data_pos.0, data_pos.1);
+        while self.data.len() > data_pos.0 {
+            self.data.pop();
+        }
+        if self.data.len() == 0 {
+            panic!("Stack does not exist.");
+        } else if self.data.len() == data_pos.0 {
+            let len = self.data.len();
+            // println!("now: {} and {:?}", len, self.data[len - 1].keys());
+            let mut keys = vec![];
+            for (k, _) in self.data[len - 1].iter() {
+                if !data_pos.1.contains(k) {
+                    keys.push(k.clone());
+                }
+            }
+            for key in keys {
+                self.data[len - 1].remove(&key);
+            }
+        } else {
+            panic!("Not popped enough.");
+        }
     }
     pub fn parse(&mut self, string: &str) -> Result<T, &str> {
-        self.input = string.clone().to_string();
+        let source_code: Vec<char> = string.chars().collect();
+        self.source_code_size = source_code.len();
         self.data.push(HashMap::new());
-        match parse_ref("Start".to_string(), None)(self) {
+        match parse_ref("Start".to_string(), None)(&source_code[..], self) {
             Err(()) => {
-                println!("Could not parse: {}", self.input);
+                println!("Could not parse: {}", string);
                 return Err("Start Parse failed.");
             }
             _ => {}

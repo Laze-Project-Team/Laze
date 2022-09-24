@@ -5,7 +5,7 @@ use crate::{combinator::*, Parser, ParserData};
 use super::{combinator::Matcher, extracter::*};
 
 #[derive(Clone)]
-pub enum PegMatcher<T: ParserData + Clone> {
+pub enum PegMatcher<T: ParserData + Clone + 'static> {
     Rules(Vec<(String, Matcher<T>)>),
     #[allow(dead_code)]
     Rule((String, Matcher<T>)),

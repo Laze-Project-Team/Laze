@@ -5,7 +5,7 @@ pub type DecList = Vec<Dec>;
 
 #[derive(Clone, Debug)]
 pub struct Dec_ {
-    pub pos: u32,
+    pub pos: usize,
     pub data: DecData,
 }
 
@@ -24,7 +24,7 @@ pub enum DecData {
 
 impl Dec_ {
     pub fn func_dec(
-        pos: u32,
+        pos: usize,
         name: String,
         params: field::FieldList,
         result: field::FieldList,
@@ -36,7 +36,7 @@ impl Dec_ {
         })
     }
     pub fn oper_dec(
-        pos: u32,
+        pos: usize,
         op: String,
         params: field::FieldList,
         result: field::FieldList,
@@ -48,7 +48,7 @@ impl Dec_ {
         })
     }
     pub fn js_import_dec(
-        pos: u32,
+        pos: usize,
         name: String,
         params: field::FieldList,
         result: field::FieldList,
@@ -60,20 +60,20 @@ impl Dec_ {
             data: DecData::JsImport(name, params, result, module, id),
         })
     }
-    pub fn js_export_dec(pos: u32, name: String, export_name: String) -> Dec {
+    pub fn js_export_dec(pos: usize, name: String, export_name: String) -> Dec {
         Box::new(Dec_ {
             pos,
             data: DecData::JsExport(name, export_name),
         })
     }
-    pub fn var_dec(pos: u32, var: Var, ty: ty::Type, init: exp::Exp) -> Dec {
+    pub fn var_dec(pos: usize, var: Var, ty: ty::Type, init: exp::Exp) -> Dec {
         Box::new(Dec_ {
             pos,
             data: DecData::Var(var, ty, init),
         })
     }
     pub fn class_dec(
-        pos: u32,
+        pos: usize,
         name: String,
         class_members: ClassMemberList,
         inheritance: Vec<String>,
@@ -83,7 +83,7 @@ impl Dec_ {
             data: DecData::Class(name, class_members, inheritance),
         })
     }
-    pub fn template_dec(pos: u32, dec: Dec, ty_params: Vec<String>) -> Dec {
+    pub fn template_dec(pos: usize, dec: Dec, ty_params: Vec<String>) -> Dec {
         Box::new(Dec_ {
             pos,
             data: DecData::Template(dec, ty_params),

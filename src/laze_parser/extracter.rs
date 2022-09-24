@@ -11,7 +11,7 @@ use crate::ast::{
     var::{Var, VarData, Var_},
 };
 
-pub fn extract_var_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Var {
+pub fn extract_var_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Var {
     match data {
         Some(data) => data.get_var_data(pos, name, rule),
         None => Box::new(Var_ {
@@ -21,7 +21,7 @@ pub fn extract_var_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str)
     }
 }
 pub fn extract_suffixlist_data(
-    pos: u32,
+    pos: usize,
     data: Option<ASTNode>,
     name: &str,
     rule: &str,
@@ -31,26 +31,31 @@ pub fn extract_suffixlist_data(
         None => vec![],
     }
 }
-pub fn extract_string_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> String {
+pub fn extract_string_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> String {
     match data {
         Some(data) => data.get_string_data(pos, name, rule),
         None => "".to_string(),
     }
 }
-pub fn extract_oper_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Oper {
+pub fn extract_oper_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Oper {
     match data {
         Some(data) => data.get_oper_data(pos, name, rule),
         None => Oper::None,
     }
 }
-pub fn extract_operlist_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> OperList {
+pub fn extract_operlist_data(
+    pos: usize,
+    data: Option<ASTNode>,
+    name: &str,
+    rule: &str,
+) -> OperList {
     match data {
         Some(data) => data.get_operlist_data(pos, name, rule),
         None => vec![],
     }
 }
 pub fn extract_stringlist_data(
-    pos: u32,
+    pos: usize,
     data: Option<ASTNode>,
     name: &str,
     rule: &str,
@@ -61,7 +66,7 @@ pub fn extract_stringlist_data(
     }
 }
 
-pub fn extract_dec_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Dec {
+pub fn extract_dec_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Dec {
     match data {
         Some(data) => data.get_dec_data(pos, name, rule),
         None => Box::new(Dec_ {
@@ -71,14 +76,14 @@ pub fn extract_dec_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str)
     }
 }
 
-pub fn extract_declist_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> DecList {
+pub fn extract_declist_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> DecList {
     match data {
         Some(data) => data.get_declist_data(pos, name, rule),
         None => vec![],
     }
 }
 
-pub fn extract_stm_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Stm {
+pub fn extract_stm_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Stm {
     match data {
         Some(data) => data.get_stm_data(pos, name, rule),
         None => Box::new(Stm_ {
@@ -87,14 +92,14 @@ pub fn extract_stm_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str)
         }),
     }
 }
-pub fn extract_stmlist_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> StmList {
+pub fn extract_stmlist_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> StmList {
     match data {
         Some(data) => data.get_stmlist_data(pos, name, rule),
         None => vec![],
     }
 }
 
-pub fn extract_exp_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Exp {
+pub fn extract_exp_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Exp {
     match data {
         Some(data) => data.get_exp_data(pos, name, rule),
         None => Box::new(Exp_ {
@@ -103,14 +108,14 @@ pub fn extract_exp_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str)
         }),
     }
 }
-pub fn extract_explist_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> ExpList {
+pub fn extract_explist_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> ExpList {
     match data {
         Some(data) => data.get_explist_data(pos, name, rule),
         None => vec![],
     }
 }
 
-pub fn extract_ty_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Type {
+pub fn extract_ty_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Type {
     match data {
         Some(data) => data.get_ty_data(pos, name, rule),
         None => Box::new(Type_ {
@@ -119,14 +124,14 @@ pub fn extract_ty_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) 
         }),
     }
 }
-pub fn extract_tylist_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> TypeList {
+pub fn extract_tylist_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> TypeList {
     match data {
         Some(data) => data.get_tylist_data(pos, name, rule),
         None => vec![],
     }
 }
 pub fn extract_classmembers_data(
-    pos: u32,
+    pos: usize,
     data: Option<ASTNode>,
     name: &str,
     rule: &str,
@@ -137,7 +142,7 @@ pub fn extract_classmembers_data(
     }
 }
 
-pub fn extract_field_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &str) -> Field {
+pub fn extract_field_data(pos: usize, data: Option<ASTNode>, name: &str, rule: &str) -> Field {
     match data {
         Some(data) => data.get_field_data(pos, name, rule),
         None => Box::new(Field_ {
@@ -147,7 +152,7 @@ pub fn extract_field_data(pos: u32, data: Option<ASTNode>, name: &str, rule: &st
     }
 }
 pub fn extract_fieldlist_data(
-    pos: u32,
+    pos: usize,
     data: Option<ASTNode>,
     name: &str,
     rule: &str,
@@ -158,7 +163,7 @@ pub fn extract_fieldlist_data(
     }
 }
 pub fn extract_ifelselist_data(
-    pos: u32,
+    pos: usize,
     data: Option<ASTNode>,
     name: &str,
     rule: &str,

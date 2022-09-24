@@ -161,7 +161,7 @@ fn test_peg_parser() {
     }
     match test_parser.parse(GREETING) {
         Ok(greetings) => {
-            assert_eq!(test_parser.input, "");
+            assert_eq!(test_parser.pos, GREETING.chars().count());
             match greetings {
                 GreetingData::Greetings(data) => {
                     for s in &data {

@@ -2,7 +2,7 @@ use crate::{Parser, ParserData};
 
 use super::combinator::*;
 
-pub fn init_peg_parser<T: Clone + ParserData + 'static>() -> Parser<T> {
+pub fn init_peg_parser<'a, T: Clone + ParserData + 'static>() -> Parser<T> {
     let mut peg_parser = Parser::<T>::new();
 
     // need to handle escape sequences

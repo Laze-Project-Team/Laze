@@ -5,7 +5,7 @@ pub type ExpList = Vec<Exp>;
 
 #[derive(Clone, Debug)]
 pub struct Exp_ {
-    pub pos: u32,
+    pub pos: usize,
     pub data: ExpData,
 }
 
@@ -32,63 +32,63 @@ pub enum ExpData {
 }
 
 impl Exp_ {
-    pub fn int_exp(pos: u32, data: String) -> Exp {
+    pub fn int_exp(pos: usize, data: String) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::String(data),
         })
     }
-    pub fn real_exp(pos: u32, data: String) -> Exp {
+    pub fn real_exp(pos: usize, data: String) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Real(data),
         })
     }
-    pub fn char_exp(pos: u32, data: char) -> Exp {
+    pub fn char_exp(pos: usize, data: char) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Char(data),
         })
     }
-    pub fn string_exp(pos: u32, data: String) -> Exp {
+    pub fn string_exp(pos: usize, data: String) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::String(data),
         })
     }
-    pub fn bool_exp(pos: u32, data: bool) -> Exp {
+    pub fn bool_exp(pos: usize, data: bool) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Bool(data),
         })
     }
 
-    pub fn var_exp(pos: u32, data: String) -> Exp {
+    pub fn var_exp(pos: usize, data: String) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Var(data),
         })
     }
-    pub fn call_exp(pos: u32, func: Exp, args: ExpList) -> Exp {
+    pub fn call_exp(pos: usize, func: Exp, args: ExpList) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Call(func, args),
         })
     }
-    pub fn binop_exp(pos: u32, oplist: op::OperList, explist: ExpList) -> Exp {
+    pub fn binop_exp(pos: usize, oplist: op::OperList, explist: ExpList) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::BinOp(oplist, explist),
         })
     }
-    pub fn unaryop_exp(pos: u32, oplist: op::OperList, exp: Exp) -> Exp {
+    pub fn unaryop_exp(pos: usize, oplist: op::OperList, exp: Exp) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::UnaryOp(oplist, exp),
         })
     }
     pub fn func_exp(
-        pos: u32,
+        pos: usize,
         params: field::FieldList,
         result: field::FieldList,
         stm: stm::Stm,
@@ -98,31 +98,31 @@ impl Exp_ {
             data: ExpData::Func(params, result, stm),
         })
     }
-    pub fn field_exp(pos: u32, field: Exp, member: String) -> Exp {
+    pub fn field_exp(pos: usize, field: Exp, member: String) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Field(field, member),
         })
     }
-    pub fn array_exp(pos: u32, explist: ExpList) -> Exp {
+    pub fn array_exp(pos: usize, explist: ExpList) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Array(explist),
         })
     }
-    pub fn sizeof_exp(pos: u32, var: Exp) -> Exp {
+    pub fn sizeof_exp(pos: usize, var: Exp) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::SizeOf(var),
         })
     }
-    pub fn paren_exp(pos: u32, exp: Exp) -> Exp {
+    pub fn paren_exp(pos: usize, exp: Exp) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Paren(exp),
         })
     }
-    pub fn suffix_exp(pos: u32, exp: Exp, suffix: ExpSuffixList) -> Exp {
+    pub fn suffix_exp(pos: usize, exp: Exp, suffix: ExpSuffixList) -> Exp {
         Box::new(Exp_ {
             pos,
             data: ExpData::Suffix(exp, suffix),

@@ -5,7 +5,7 @@ pub type FieldList = Vec<Field>;
 
 #[derive(Clone, Debug)]
 pub struct Field_ {
-    pub pos: u32,
+    pub pos: usize,
     pub data: FieldData,
 }
 
@@ -16,7 +16,7 @@ pub enum FieldData {
 }
 
 impl Field_ {
-    pub fn new(pos: u32, var: Var, ty: ty::Type) -> Field {
+    pub fn new(pos: usize, var: Var, ty: ty::Type) -> Field {
         Box::new(Field_ {
             pos,
             data: FieldData::Field { 0: var, 1: ty },

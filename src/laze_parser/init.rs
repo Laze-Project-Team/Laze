@@ -12,6 +12,6 @@ pub fn init_laze_parser(parser_file_path: &Path) -> Parser<ASTNode> {
 pub fn init_laze_parser_direct(parser_rules: &str) -> Parser<ASTNode> {
     let mut laze_parser = PegParser::<ASTNode>::new();
     laze_parser
-        .parse_parser(&parser_rules)
+        .parse_parser(parser_rules.to_string())
         .expect("Parsing parser: ")
 }

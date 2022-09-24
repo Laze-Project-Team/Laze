@@ -1,4 +1,5 @@
 use std::io::{stderr, Write};
+use std::mem;
 
 use peg_parser::{Parser, ParserData};
 
@@ -43,9 +44,9 @@ pub enum ASTNode {
 }
 
 impl ASTNode {
-    pub fn get_var_data(&self, pos: u32, name: &str, rule: &str) -> Var {
+    pub fn get_var_data(self, pos: usize, name: &str, rule: &str) -> Var {
         if let ASTNode::Var(var) = self {
-            var.clone()
+            var
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a declaration.");
             Box::new(Var_ {
@@ -54,12 +55,17 @@ impl ASTNode {
             })
         }
     }
-    pub fn get_dec_data(&self, pos: u32, name: &str, rule: &str) -> Dec {
+    pub fn get_dec_data(self, pos: usize, name: &str, rule: &str) -> Dec {
         match self {
-            ASTNode::Dec(dec) => dec.clone(),
-            ASTNode::DecList(declist) => {
+            ASTNode::Dec(dec) => dec,
+            ASTNode::DecList(mut declist) => {
                 if declist.len() == 1 {
-                    declist[0].clone()
+                    let mut temp_dec = Box::new(Dec_ {
+                        pos,
+                        data: DecData::None,
+                    });
+                    mem::swap(&mut declist[0], &mut temp_dec);
+                    temp_dec
                 } else {
                     let _ = writeln!(stderr(), "{name} in {rule} is not a declaration.");
                     Box::new(Dec_ {
@@ -77,20 +83,25 @@ impl ASTNode {
             }
         }
     }
-    pub fn get_declist_data(&self, _pos: u32, name: &str, rule: &str) -> DecList {
+    pub fn get_declist_data(self, _pos: usize, name: &str, rule: &str) -> DecList {
         if let ASTNode::DecList(declist) = self {
-            declist.clone()
+            declist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a declaration list.");
             vec![]
         }
     }
-    pub fn get_stm_data(&self, pos: u32, name: &str, rule: &str) -> Stm {
+    pub fn get_stm_data(self, pos: usize, name: &str, rule: &str) -> Stm {
         match self {
-            ASTNode::Stm(stm) => stm.clone(),
-            ASTNode::StmList(stmlist) => {
+            ASTNode::Stm(stm) => stm,
+            ASTNode::StmList(mut stmlist) => {
                 if stmlist.len() == 1 {
-                    stmlist[0].clone()
+                    let mut temp_stm = Box::new(Stm_ {
+                        pos,
+                        data: StmData::None,
+                    });
+                    mem::swap(&mut stmlist[0], &mut temp_stm);
+                    temp_stm
                 } else {
                     let _ = writeln!(stderr(), "{name} in {rule} is not a statement.");
                     Box::new(Stm_ {
@@ -108,29 +119,30 @@ impl ASTNode {
             }
         }
     }
-    pub fn get_stmlist_data(&self, _pos: u32, name: &str, rule: &str) -> StmList {
+    pub fn get_stmlist_data(self, _pos: usize, name: &str, rule: &str) -> StmList {
         if let ASTNode::StmList(stmlist) = self {
-            stmlist.clone()
+            stmlist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a statement list.");
             vec![]
         }
     }
-    pub fn get_exp_data(&self, pos: u32, name: &str, rule: &str) -> Exp {
+    pub fn get_exp_data(self, pos: usize, name: &str, rule: &str) -> Exp {
         match self {
-            ASTNode::Exp(exp) => exp.clone(),
-            ASTNode::ExpList(explist) => {
-                return if explist.len() == 1 {
-                    explist[0].clone()
+            ASTNode::Exp(exp) => exp,
+            ASTNode::ExpList(mut explist) => {
+                let mut temp_exp = Box::new(Exp_ {
+                    pos,
+                    data: ExpData::None,
+                });
+                if explist.len() == 1 {
+                    mem::swap(&mut explist[0], &mut temp_exp);
                 } else if explist.len() == 0 {
-                    Box::new(Exp_ {
-                        pos,
-                        data: ExpData::None,
-                    })
                 } else {
                     // let _ = writeln!(stderr(), "{name} in {rule} is not an expression.");
-                    explist[0].clone()
-                };
+                    mem::swap(&mut explist[0], &mut temp_exp);
+                }
+                temp_exp
             }
             _ => {
                 let _ = writeln!(stderr(), "{name} in {rule} is not an expression.");
@@ -141,25 +153,25 @@ impl ASTNode {
             }
         }
     }
-    pub fn get_explist_data(&self, _pos: u32, name: &str, rule: &str) -> ExpList {
+    pub fn get_explist_data(self, _pos: usize, name: &str, rule: &str) -> ExpList {
         if let ASTNode::ExpList(explist) = self {
-            explist.clone()
+            explist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not an expression list.");
             vec![]
         }
     }
-    pub fn get_classmembers_data(&self, _pos: u32, name: &str, rule: &str) -> ClassMemberList {
+    pub fn get_classmembers_data(self, _pos: usize, name: &str, rule: &str) -> ClassMemberList {
         if let ASTNode::ClassMemberList(members) = self {
-            members.clone()
+            members
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not an class members list.");
             vec![]
         }
     }
-    pub fn get_ty_data(&self, pos: u32, name: &str, rule: &str) -> Type {
+    pub fn get_ty_data(self, pos: usize, name: &str, rule: &str) -> Type {
         if let ASTNode::Type(ty) = self {
-            ty.clone()
+            ty
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a type.");
             Box::new(Type_ {
@@ -168,17 +180,17 @@ impl ASTNode {
             })
         }
     }
-    pub fn get_tylist_data(&self, _pos: u32, name: &str, rule: &str) -> TypeList {
+    pub fn get_tylist_data(self, _pos: usize, name: &str, rule: &str) -> TypeList {
         if let ASTNode::TypeList(tylist) = self {
-            tylist.clone()
+            tylist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a type.");
             vec![]
         }
     }
-    pub fn get_field_data(&self, pos: u32, name: &str, rule: &str) -> Field {
+    pub fn get_field_data(self, pos: usize, name: &str, rule: &str) -> Field {
         if let ASTNode::Field(field) = self {
-            field.clone()
+            field
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a field.");
             Box::new(Field_ {
@@ -187,57 +199,57 @@ impl ASTNode {
             })
         }
     }
-    pub fn get_oper_data(&self, _pos: u32, name: &str, rule: &str) -> Oper {
+    pub fn get_oper_data(self, _pos: usize, name: &str, rule: &str) -> Oper {
         if let ASTNode::Op(oper) = self {
-            oper.clone()
+            oper
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a field.");
             Oper::None
         }
     }
-    pub fn get_fieldlist_data(&self, _pos: u32, name: &str, rule: &str) -> FieldList {
+    pub fn get_fieldlist_data(self, _pos: usize, name: &str, rule: &str) -> FieldList {
         if let ASTNode::FieldList(fieldlist) = self {
-            fieldlist.clone()
+            fieldlist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a fieldlist.");
             vec![]
         }
     }
-    pub fn get_string_data(&self, _pos: u32, name: &str, rule: &str) -> String {
+    pub fn get_string_data(self, _pos: usize, name: &str, rule: &str) -> String {
         if let ASTNode::String(str) = self {
-            str.clone()
+            str
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a string.");
             "".to_string()
         }
     }
-    pub fn get_stringlist_data(&self, _pos: u32, name: &str, rule: &str) -> Vec<String> {
+    pub fn get_stringlist_data(self, _pos: usize, name: &str, rule: &str) -> Vec<String> {
         if let ASTNode::StringList(strlist) = self {
-            strlist.clone()
+            strlist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a string list.");
             vec![]
         }
     }
-    pub fn get_suffixlist_data(&self, _pos: u32, name: &str, rule: &str) -> ExpSuffixList {
+    pub fn get_suffixlist_data(self, _pos: usize, name: &str, rule: &str) -> ExpSuffixList {
         if let ASTNode::ExpSuffixList(suffixlist) = self {
-            suffixlist.clone()
+            suffixlist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a string list.");
             vec![]
         }
     }
-    pub fn get_ifelselist_data(&self, _pos: u32, name: &str, rule: &str) -> IfElseList {
+    pub fn get_ifelselist_data(self, _pos: usize, name: &str, rule: &str) -> IfElseList {
         if let ASTNode::IfElseList(ifelselist) = self {
-            ifelselist.clone()
+            ifelselist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a string list.");
             vec![]
         }
     }
-    pub fn get_operlist_data(&self, _pos: u32, name: &str, rule: &str) -> OperList {
+    pub fn get_operlist_data(self, _pos: usize, name: &str, rule: &str) -> OperList {
         if let ASTNode::OperList(oplist) = self {
-            oplist.clone()
+            oplist
         } else {
             let _ = writeln!(stderr(), "{name} in {rule} is not a string list.");
             vec![]

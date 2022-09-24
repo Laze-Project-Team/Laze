@@ -27,7 +27,7 @@ impl LazeParser {
     }
     pub fn parse(&mut self, program_path: &Path) -> ASTNode {
         let content = open_file(program_path);
-        match self.parser.parse(&content) {
+        match self.parser.parse(content.as_str()) {
             Ok(node) => node,
             Err(mes) => {
                 let _ = writeln!(stderr(), "{mes}");

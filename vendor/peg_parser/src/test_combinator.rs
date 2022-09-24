@@ -27,8 +27,8 @@ fn test_parse_str() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_str("\u{3042}".to_string()));
         match test_parser.parse("あああ") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "ああ");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -39,8 +39,8 @@ fn test_parse_str() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_str("aaa".to_string()));
         match test_parser.parse("aaa") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 3);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -55,8 +55,8 @@ fn test_parse_any() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_any());
         match test_parser.parse("あああ") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "ああ");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -111,8 +111,8 @@ fn test_parse_range() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("a-c".to_string()));
         match test_parser.parse("c") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -123,8 +123,8 @@ fn test_parse_range() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("ab-c".to_string()));
         match test_parser.parse("b") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -135,8 +135,8 @@ fn test_parse_range() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("ab-cde-f".to_string()));
         match test_parser.parse("d") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -147,8 +147,8 @@ fn test_parse_range() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range(r"\--/".to_string()));
         match test_parser.parse(".") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -159,8 +159,8 @@ fn test_parse_range() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("a-zあ-ん".to_string()));
         match test_parser.parse("か") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -171,8 +171,8 @@ fn test_parse_range() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("㐀-龯".to_string()));
         match test_parser.parse("成田") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "田");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -186,8 +186,8 @@ fn test_parse_range() {
             parse_range("㐀-龯ぁ-んァ-ヶa-zA-Z_ー".to_string()),
         );
         match test_parser.parse("_成田") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "成田");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -233,8 +233,8 @@ fn test_parse_many() {
             parse_many(parse_range("㐀-龯ぁ-んァ-ヶa-zA-Z_ー".to_string())),
         );
         match test_parser.parse("_") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -248,8 +248,8 @@ fn test_parse_many() {
             parse_many(parse_range("㐀-龯ぁ-んァ-ヶa-zA-Z_ー".to_string())),
         );
         match test_parser.parse("") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 0);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -265,8 +265,8 @@ fn test_parse_many() {
             )),
         );
         match test_parser.parse("成田fdsfsfdojiｌｋじょい") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 17);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -280,8 +280,8 @@ fn test_parse_many() {
             parse_many(parse_range("0-9".to_string())),
         );
         match test_parser.parse("456789") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 6);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -295,8 +295,8 @@ fn test_parse_many() {
             parse_many(parse_range("㐀-龯ぁ-んァ-ヶa-zA-Z_ー".to_string())),
         );
         match test_parser.parse("hello world") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, " world");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 5);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -330,8 +330,8 @@ fn test_parse_more_than_one() {
             parse_more_than_one(parse_range("0-9".to_string())),
         );
         match test_parser.parse("1234567") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 7);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -345,8 +345,8 @@ fn test_parse_more_than_one() {
             parse_more_than_one(parse_str(" ".to_string())),
         );
         match test_parser.parse("     ") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 5);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -380,8 +380,8 @@ fn test_parse_not() {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_not(parse_str("a".to_string())));
         match test_parser.parse("bbb") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "bbb");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 0);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -419,8 +419,8 @@ fn test_parse_seq() {
             ]),
         );
         match test_parser.parse("hello world") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 11);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -443,8 +443,8 @@ fn test_parse_seq() {
             ]),
         );
         match test_parser.parse("hello 永田!") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, "");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 9);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -466,8 +466,8 @@ fn test_parse_or() {
             ]),
         );
         match test_parser.parse("good morning world") {
-            Ok(str) => {
-                assert_eq!(test_parser.input, " world");
+            Ok(()) => {
+                assert_eq!(test_parser.pos, 12);
             }
             Err(_) => {
                 panic!("Parse Failed.")
@@ -629,7 +629,7 @@ fn test_combinators() {
     );
     match test_parser.parse("Hi 永田!\nGood morning 成田!\n") {
         Ok(greetings) => {
-            assert_eq!(test_parser.input, "");
+            assert_eq!(test_parser.pos, 24);
             match greetings {
                 GreetingData::Greetings(data) => {
                     for s in &data {

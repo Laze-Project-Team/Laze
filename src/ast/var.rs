@@ -4,7 +4,7 @@ pub type Var = Box<Var_>;
 
 #[derive(Clone, Debug)]
 pub struct Var_ {
-    pub pos: u32,
+    pub pos: usize,
     pub data: VarData,
 }
 
@@ -18,25 +18,25 @@ pub enum VarData {
 }
 
 impl Var_ {
-    pub fn simple_var(pos: u32, name: String) -> Var {
+    pub fn simple_var(pos: usize, name: String) -> Var {
         Box::new(Var_ {
             pos,
             data: VarData::Simple(name),
         })
     }
-    pub fn call_var(pos: u32, var: Var, elist: ExpList) -> Var {
+    pub fn call_var(pos: usize, var: Var, elist: ExpList) -> Var {
         Box::new(Var_ {
             pos,
             data: VarData::Call(var, elist),
         })
     }
-    pub fn array_var(pos: u32, var: Var, exp: Exp) -> Var {
+    pub fn array_var(pos: usize, var: Var, exp: Exp) -> Var {
         Box::new(Var_ {
             pos,
             data: VarData::Array(var, exp),
         })
     }
-    pub fn pointer_var(pos: u32, var: Var) -> Var {
+    pub fn pointer_var(pos: usize, var: Var) -> Var {
         Box::new(Var_ {
             pos,
             data: VarData::Pointer(var),

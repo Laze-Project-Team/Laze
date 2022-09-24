@@ -5,34 +5,39 @@ use std::{
 
 use crate::{Parser, ParserData};
 
-pub type Matcher<T> = Rc<dyn Fn(&mut Parser<T>) -> Result<String, ()>>;
+pub type Matcher<T> = Rc<dyn Fn(&[char], &mut Parser<T>) -> Result<(), ()>>;
 
 pub fn parse_str<T: ParserData + Clone + 'static>(str: String) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_str {:?}", str);
-        if parser.input.starts_with(&*str) {
-            parser.eat(&str);
-            Ok(str.to_string())
-        } else {
-            Err(())
-        }
-    });
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_str {:?} in {:?}", str, input);
+            let chars: Vec<char> = str.chars().collect();
+            if input.starts_with(&chars[..]) {
+                parser.eat(&str);
+                Ok(())
+            } else {
+                Err(())
+            }
+        },
+    );
 }
 
 pub fn parse_any<T: ParserData + Clone + 'static>() -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        println!("parse_any {}", parser.input);
-        if parser.input.len() > 0 {
-            let ch = parser.input.chars().nth(0).unwrap();
-            if ch == '\n' {
-                return Err(());
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_any {}", parser.input);
+            if input.len() > 0 {
+                let ch = input[0];
+                if ch == '\n' {
+                    return Err(());
+                }
+                parser.eat(&ch.to_string());
+                Ok(())
+            } else {
+                Err(())
             }
-            parser.eat(&ch.to_string());
-            Ok(ch.to_string())
-        } else {
-            Err(())
-        }
-    });
+        },
+    );
 }
 
 fn get_char_range(range: String) -> Vec<char> {
@@ -72,147 +77,165 @@ pub fn parse_range<T: ParserData + Clone + 'static>(range: String) -> Matcher<T>
     } else {
         range_chars = range.chars().collect();
     }
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_range");
-        if range_chars.contains(match &parser.input.chars().nth(0) {
-            Some(c) => c,
-            None => return Err(()),
-        }) {
-            let ch = parser.input.chars().nth(0).unwrap();
-            parser.eat(&ch.to_string());
-            Ok(ch.to_string())
-        } else {
-            Err(())
-        }
-    });
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_range");
+            if range_chars.contains(if input.len() > 0 {
+                &input[0]
+            } else {
+                return Err(());
+            }) {
+                let ch = input[0];
+                parser.eat(&ch.to_string());
+                Ok(())
+            } else {
+                Err(())
+            }
+        },
+    );
 }
 
 pub fn parse_many<T: ParserData + Clone + 'static>(matcher: Matcher<T>) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_many");
-        let mut matched = "".to_string();
-        while let Ok(str) = matcher(parser) {
-            matched += str.as_str();
-        }
-        Ok(matched)
-    });
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_many");
+            let pos = parser.pos;
+            while let Ok(()) = matcher(&input[(parser.pos - pos)..], parser) {}
+            Ok(())
+        },
+    );
 }
 
 pub fn parse_more_than_one<T: ParserData + Clone + 'static>(matcher: Matcher<T>) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_more_than_one");
-        let mut matched = "".to_string();
-        if let Ok(str) = matcher(parser) {
-            matched += str.as_str();
-            if let Ok(str) = parse_many(matcher.clone())(parser) {
-                matched += str.as_str();
-                Ok(matched)
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_more_than_one");
+            let pos = parser.pos;
+            if let Ok(()) = matcher(input, parser) {
+                parse_many(matcher.clone())(&input[(parser.pos - pos)..], parser)
             } else {
-                Ok(matched)
+                Err(())
             }
-        } else {
-            Err(())
-        }
-    });
+        },
+    );
 }
 
 pub fn parse_not<T: ParserData + Clone + 'static>(matcher: Matcher<T>) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_not");
-        if let Ok(str) = matcher(parser) {
-            parser.input = str + &parser.input;
-            Err(())
-        } else {
-            Ok("".to_string())
-        }
-    });
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_not");
+            let pos = parser.pos;
+            if let Ok(()) = matcher(input, parser) {
+                parser.pos = pos;
+                Err(())
+            } else {
+                Ok(())
+            }
+        },
+    );
 }
 
 pub fn parse_seq<T: ParserData + Clone + 'static>(matchers: Vec<Matcher<T>>) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_seq");
-        let mut matched = "".to_string();
-        for matcher in &matchers {
-            match matcher(parser) {
-                Ok(str) => {
-                    // println!("parse_seq: {:?}", str);
-                    matched += str.as_str();
-                }
-                Err(()) => {
-                    // add the eaten letters to the input string
-                    parser.input = matched + &parser.input;
-                    return Err(());
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_seq");
+            let pos = parser.pos;
+            let mut keys = vec![];
+            for key in parser.data.last().expect("Stack does not exist.").keys() {
+                keys.push(key.clone());
+            }
+            let data_pos = (parser.data.len(), keys);
+            for matcher in &matchers {
+                match matcher(&input[(parser.pos - pos)..], parser) {
+                    Ok(()) => {}
+                    Err(()) => {
+                        parser.backtrace(pos, &data_pos);
+                        return Err(());
+                    }
                 }
             }
-        }
-        Ok(matched)
-    });
+            Ok(())
+        },
+    );
 }
 
 pub fn parse_or<T: ParserData + Clone + 'static>(matchers: Vec<Matcher<T>>) -> Matcher<T> {
     // backtrack needed
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_or");
-        for matcher in &matchers {
-            let mut temp = parser.clone();
-            let matched: String;
-            // println!("parse_or: {}", parser.input);
-            match matcher(&mut temp) {
-                Ok(str) => {
-                    matched = str;
-                }
-                Err(()) => continue,
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            let pos = parser.pos;
+            let mut keys = vec![];
+            for key in parser.data.last().expect("Stack does not exist.").keys() {
+                keys.push(key.clone());
             }
-            *parser = temp.clone();
-            return Ok(matched);
-        }
-        Err(())
-    });
+            let data_pos = (parser.data.len(), keys);
+            // println!("parse_or");
+            for matcher in &matchers {
+                // println!("parse_or: {}", parser.input);
+                // println!("{} in {}", parser.pos - pos, input.len());
+                match matcher(input, parser) {
+                    Ok(()) => {
+                        return Ok(());
+                    }
+                    Err(()) => parser.backtrace(pos, &data_pos),
+                }
+            }
+            Err(())
+        },
+    );
 }
 
 pub fn parse_ref<T: ParserData + Clone + 'static>(
     name: String,
     save_name: Option<String>,
 ) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        println!("parse_ref {}", name);
-        let matcher: Matcher<T>;
-        if let Some(m) = parser.grammar_list.get(name.as_str()) {
-            matcher = m.clone();
-        } else {
-            panic!("Could not find {} in the grammar.", name);
-        }
-        parser.enter_scope();
-        match matcher(parser) {
-            Ok(str) => {
-                // println!("parsed: {str}");
-                let data = T::data(name.clone(), parser);
-                parser.exit_scope();
-                match save_name.clone() {
-                    Some(str) => parser.add_data(str.clone(), data),
-                    None => parser.add_data(name.clone(), data),
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            // println!("parse_ref {}", name);
+            let matcher: Matcher<T>;
+            if let Some(m) = parser.grammar_list.get(name.as_str()) {
+                matcher = m.clone();
+            } else {
+                panic!("Could not find {} in the grammar.", name);
+            }
+            parser.enter_scope();
+            match matcher(input, parser) {
+                Ok(()) => {
+                    let data = T::data(name.clone(), parser);
+                    // println!("parsed: {name}");
+                    parser.exit_scope();
+                    match save_name.clone() {
+                        Some(str) => parser.add_data(str, data),
+                        None => parser.add_data(name.clone(), data),
+                    }
+                    Ok(())
                 }
-                Ok(str)
+                Err(()) => {
+                    parser.exit_scope();
+                    Err(())
+                }
             }
-            Err(()) => {
-                parser.exit_scope();
-                Err(())
-            }
-        }
-    });
+        },
+    );
 }
 
 pub fn capture_string<T: ParserData + Clone + 'static>(
     name: String,
     matcher: Matcher<T>,
 ) -> Matcher<T> {
-    return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        match matcher(parser) {
-            Ok(str) => {
-                parser.add_data(name.clone(), T::string(str.clone()));
-                Ok(str)
+    return Rc::new(
+        move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
+            let pos = parser.pos;
+            match matcher(input, parser) {
+                Ok(()) => {
+                    parser.add_data(
+                        name.clone(),
+                        T::string((&input[0..parser.pos - pos]).iter().collect()),
+                    );
+                    Ok(())
+                }
+                Err(()) => Err(()),
             }
-            Err(()) => Err(()),
-        }
-    });
+        },
+    );
 }
