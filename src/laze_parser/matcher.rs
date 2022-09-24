@@ -528,16 +528,9 @@ pub fn extract_ast(name: String, parser: &mut Parser<ASTNode>) -> ASTNode {
             );
             let exp = match parser.get_data("suffix".to_string()) {
                 Some(node) => match node {
-                    ASTNode::ExpSuffixList(suffix) => ASTNode::Exp(Exp_::suffix_exp(
-                        parser.pos,
-                        new_exp,
-                        extract_suffixlist_data(
-                            parser.pos,
-                            parser.get_data("suffix".to_string()),
-                            "suffix",
-                            name.as_str(),
-                        ),
-                    )),
+                    ASTNode::ExpSuffixList(suffix) => {
+                        ASTNode::Exp(Exp_::suffix_exp(parser.pos, new_exp, suffix))
+                    }
                     _ => ASTNode::Exp(new_exp),
                 },
                 None => ASTNode::Exp(new_exp),

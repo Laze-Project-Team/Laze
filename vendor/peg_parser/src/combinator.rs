@@ -21,7 +21,7 @@ pub fn parse_str<T: ParserData + Clone + 'static>(str: String) -> Matcher<T> {
 
 pub fn parse_any<T: ParserData + Clone + 'static>() -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_any {}", parser.input);
+        println!("parse_any {}", parser.input);
         if parser.input.len() > 0 {
             let ch = parser.input.chars().nth(0).unwrap();
             if ch == '\n' {
@@ -175,7 +175,7 @@ pub fn parse_ref<T: ParserData + Clone + 'static>(
     save_name: Option<String>,
 ) -> Matcher<T> {
     return Rc::new(move |parser: &mut Parser<T>| -> Result<String, ()> {
-        // println!("parse_ref {}", name);
+        println!("parse_ref {}", name);
         let matcher: Matcher<T>;
         if let Some(m) = parser.grammar_list.get(name.as_str()) {
             matcher = m.clone();

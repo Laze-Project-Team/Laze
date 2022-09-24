@@ -101,3 +101,5 @@ ID = { [㐀-龯ぁ-んァ-ヶa-zA-Z_ー] [㐀-龯ぁ-んァ-ヶa-zA-Z0-9０-９_
 Integer = { [0-9]+ " "* : int }
 Real = { Integer "." Integer : real }
 String = { "\"" ( !"\"" . )* "\"" : string }
+
+FunctionPrototype = "関数" ":" ID "(" FieldList::params ")" "=>" "(" FieldList::result ")" ";"

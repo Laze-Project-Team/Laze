@@ -51,3 +51,23 @@ fn handle_double_dash(arguments: &mut VecDeque<String>, info: &mut OptionCompile
 fn handle_single_dash(_: &mut VecDeque<String>, _: &mut OptionCompilerInfo) {
     ()
 }
+
+pub fn test_handle_args(arguments: Vec<String>) -> CompilerInfo {
+    let mut args_vector: VecDeque<String> = VecDeque::new();
+    let mut info = OptionCompilerInfo::new();
+    for argument in arguments.into_iter().skip(1) {
+        args_vector.push_back(argument);
+    }
+    for arg in args_vector.clone() {
+        // println!("{arg}");
+        if arg.starts_with("--") {
+            handle_double_dash(&mut args_vector, &mut info);
+        } else if arg.starts_with("-") {
+            handle_single_dash(&mut args_vector, &mut info);
+        } else {
+            info.program_file_path = Some(arg);
+            args_vector.pop_front();
+        }
+    }
+    CompilerInfo::from_option(info)
+}
