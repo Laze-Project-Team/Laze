@@ -3,6 +3,8 @@ use std::{
     rc::Rc,
 };
 
+use regex::{self, Regex};
+
 use crate::{Parser, ParserData};
 
 pub type Matcher<T> = Rc<dyn Fn(&[char], &mut Parser<T>) -> Result<(), ()>>;
@@ -71,23 +73,27 @@ fn get_char_range(range: String) -> Vec<char> {
 }
 
 pub fn parse_range<T: ParserData + Clone + 'static>(range: String) -> Matcher<T> {
-    let range_chars: Vec<char>;
-    if range.contains('-') {
-        range_chars = get_char_range(range);
-    } else {
-        range_chars = range.chars().collect();
-    }
+    // let range_chars: Vec<char>;
+    // if range.contains('-') {
+    //     range_chars = get_char_range(range);
+    // } else {
+    //     range_chars = range.chars().collect();
+    // }
+    let mut range_str = String::new();
+    range_str += "[";
+    range_str += range.as_str();
+    range_str += "]";
+    let range_regex = Regex::new(range_str.as_str()).expect("Range Regex Parsing Failed.");
     return Rc::new(
         move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
-            // println!("parse_range");
-            if range_chars.contains(if input.len() > 0 {
-                &input[0]
-            } else {
-                return Err(());
-            }) {
-                let ch = input[0];
-                parser.eat(&ch.to_string());
-                Ok(())
+            println!("parse_range: {:?}", input);
+            if input.len() > 0 {
+                if let Some(ch) = range_regex.captures(input[0].to_string().as_str()) {
+                    parser.eat(&ch[0].to_string());
+                    Ok(())
+                } else {
+                    Err(())
+                }
             } else {
                 Err(())
             }

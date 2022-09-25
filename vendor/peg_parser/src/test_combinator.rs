@@ -194,22 +194,22 @@ fn test_parse_range() {
             }
         }
     }
-}
-
-#[test]
-fn test_parse_range_should_fail() {
     {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("a-".to_string()));
         match test_parser.parse("a") {
             Ok(_) => {
-                panic!("unexpected parse successful");
+                assert_eq!(test_parser.pos, 1);
             }
             Err(_) => {
-                assert_eq!(1, 1);
+                panic!("Parse failed.");
             }
         }
     }
+}
+
+#[test]
+fn test_parse_range_should_fail() {
     {
         let mut test_parser = Parser::<()>::new();
         test_parser.add_rule("Start".to_string(), parse_range("あいう".to_string()));

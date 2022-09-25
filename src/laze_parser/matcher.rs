@@ -216,7 +216,7 @@ pub fn extract_ast(name: String, parser: &mut Parser<ASTNode>) -> ASTNode {
                 match parser.get_data_from_parent_scope("ifelse".to_string()) {
                     Some(node) => match node {
                         ASTNode::IfElseList(mut list) => {
-                            list.push(IfElse_::if_(parser.pos, test, body));
+                            list.push(IfElse_::else_if(parser.pos, test, body));
                             return ASTNode::IfElseList(list);
                         }
                         _ => ASTNode::None,
