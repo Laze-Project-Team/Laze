@@ -37,7 +37,7 @@ impl<T: Clone + ParserData + 'static> PegParser<T> {
         };
         let mut output_parser = Parser::new();
         for rule in rules {
-            output_parser.add_rule(rule.0.clone(), rule.1.clone());
+            output_parser.add_rule(rule.0, rule.1);
         }
         Ok(output_parser)
     }
@@ -120,9 +120,19 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
     pub fn get_data_from_parent_scope(&mut self, name: String) -> Option<T> {
         // println!("{}", size_of::<HashMap<&str, T>>());
         // println!("{:?}", self.data.keys());
-        let val = if self.data.len() >= 2 {
-            match self.data[self.data.len() - 2].get(&name) {
-                Some(data) => Some(data.clone()),
+        let len = self.data.len();
+        let val = if len >= 2 {
+            match self
+                .data
+                .get_mut(len - 2)
+                .expect("Stack does not exist.")
+                .get_mut(&name)
+            {
+                Some(data) => {
+                    let mut temp = T::null();
+                    std::mem::swap(data, &mut temp);
+                    Some(temp)
+                }
                 None => None,
             }
         } else {

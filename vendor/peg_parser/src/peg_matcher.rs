@@ -16,31 +16,31 @@ pub enum PegMatcher<T: ParserData + Clone + 'static> {
 }
 
 impl<T: ParserData + Clone> PegMatcher<T> {
-    pub fn get_string_data(&self, name: &str, rule: &str) -> String {
+    pub fn get_string_data(self, name: &str, rule: &str) -> String {
         if let Self::String(str) = self {
-            str.clone()
+            str
         } else {
             let _ = writeln!(stderr(), "{} in {} is not a string.", name, rule);
             "".to_string()
         }
     }
-    pub fn get_matcher_data(&self, name: &str, rule: &str) -> Matcher<T> {
+    pub fn get_matcher_data(self, name: &str, rule: &str) -> Matcher<T> {
         if let Self::Matcher(matcher) = self {
-            matcher.clone()
+            matcher
         } else {
             panic!("{} in {} is not a matcher.", name, rule);
         }
     }
-    pub fn get_matchers_data(&self, name: &str, rule: &str) -> Vec<Matcher<T>> {
+    pub fn get_matchers_data(self, name: &str, rule: &str) -> Vec<Matcher<T>> {
         if let Self::Matchers(matcher) = self {
-            matcher.clone()
+            matcher
         } else {
             panic!("{} in {} is not a matcher.", name, rule);
         }
     }
-    pub fn get_rules_data(&self, name: &str, rule: &str) -> Vec<(String, Matcher<T>)> {
+    pub fn get_rules_data(self, name: &str, rule: &str) -> Vec<(String, Matcher<T>)> {
         if let Self::Rules(matcher) = self {
-            matcher.clone()
+            matcher
         } else {
             panic!("{} in {} is not a matcher.", name, rule);
         }
