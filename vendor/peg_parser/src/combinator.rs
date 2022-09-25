@@ -198,7 +198,7 @@ pub fn parse_ref<T: ParserData + Clone + 'static>(
             parser.enter_scope();
             match matcher(input, parser) {
                 Ok(()) => {
-                    let data = T::data(name.clone(), parser);
+                    let data = T::data(name.as_str(), parser);
                     // println!("parsed: {name}");
                     parser.exit_scope();
                     match save_name.clone() {

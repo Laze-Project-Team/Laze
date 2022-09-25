@@ -46,7 +46,7 @@ impl<T: Clone + ParserData + 'static> PegParser<T> {
 pub trait ParserData: Sized + Clone {
     fn string(str: String) -> Self;
     fn null() -> Self;
-    fn data(name: String, parser: &mut Parser<Self>) -> Self;
+    fn data(name: &str, parser: &mut Parser<Self>) -> Self;
     fn is_null(&self) -> bool;
 }
 

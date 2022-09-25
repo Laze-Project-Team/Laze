@@ -264,7 +264,7 @@ impl ParserData for ASTNode {
     fn null() -> Self {
         Self::None
     }
-    fn data(name: String, parser: &mut Parser<Self>) -> Self {
+    fn data(name: &str, parser: &mut Parser<Self>) -> Self {
         extract_ast(name, parser)
     }
     fn is_null(&self) -> bool {

@@ -13,7 +13,7 @@ impl ParserData for () {
     fn null() -> Self {
         ()
     }
-    fn data(_: String, _: &mut Parser<()>) -> Self {
+    fn data(_: &str, _: &mut Parser<()>) -> Self {
         ()
     }
     fn is_null(&self) -> bool {
