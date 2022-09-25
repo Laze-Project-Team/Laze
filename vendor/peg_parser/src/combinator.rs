@@ -86,7 +86,7 @@ pub fn parse_range<T: ParserData + Clone + 'static>(range: String) -> Matcher<T>
     let range_regex = Regex::new(range_str.as_str()).expect("Range Regex Parsing Failed.");
     return Rc::new(
         move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
-            println!("parse_range: {:?}", input);
+            // println!("parse_range: {:?}", input);
             if input.len() > 0 {
                 if let Some(ch) = range_regex.captures(input[0].to_string().as_str()) {
                     parser.eat(&ch[0].to_string());
