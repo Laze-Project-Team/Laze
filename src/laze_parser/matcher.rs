@@ -9,7 +9,7 @@ use crate::ast::{
     field::Field_,
     ifelse::IfElse_,
     op::{string_to_oper, Oper},
-    stm::Stm_,
+    stm::{AssignType, Stm_},
     suffix::ExpSuffix_,
     ty::Type_,
     var::Var_,
@@ -18,6 +18,7 @@ use crate::ast::{
 use super::extracter::*;
 
 pub fn extract_ast(name: &str, parser: &mut Parser<ASTNode>) -> ASTNode {
+    // println!("Reducing: {}", name);
     match name {
         "String" => {
             let mut content = extract_string_data(
@@ -277,11 +278,24 @@ pub fn extract_ast(name: &str, parser: &mut Parser<ASTNode>) -> ASTNode {
                 name,
             ),
         )),
-        "AssignStm" => ASTNode::Stm(Stm_::assign_stm(
-            parser.pos,
-            extract_var_data(parser.pos, parser.get_data("Var".to_string()), "Var", name),
-            extract_exp_data(parser.pos, parser.get_data("Exp".to_string()), "Exp", name),
-        )),
+        "AssignStm" => parser
+            .get_data("stm".to_string())
+            .expect("stm in AssignStm"),
+        "NormalAssign" | "AddAssign" | "SubAssign" | "MulAssign" | "DivAssign" => {
+            ASTNode::Stm(Stm_::assign_stm(
+                parser.pos,
+                extract_var_data(parser.pos, parser.get_data("Var".to_string()), "Var", name),
+                extract_exp_data(parser.pos, parser.get_data("Exp".to_string()), "Exp", name),
+                match name {
+                    "NormalAssign" => AssignType::Normal,
+                    "AddAssign" => AssignType::Add,
+                    "SubAssign" => AssignType::Sub,
+                    "MulAssign" => AssignType::Mul,
+                    "DivAssign" => AssignType::Div,
+                    _ => AssignType::Normal,
+                },
+            ))
+        }
         "DecStm" => ASTNode::Stm(Stm_::dec_stm(
             parser.pos,
             extract_dec_data(parser.pos, parser.get_data("Dec".to_string()), "Dec", name),

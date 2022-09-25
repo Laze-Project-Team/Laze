@@ -16,9 +16,18 @@ pub struct Stm_ {
 }
 
 #[derive(Clone, Debug)]
+pub enum AssignType {
+    Normal,
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+#[derive(Clone, Debug)]
 pub enum StmData {
     Compound(StmList),
-    Assign(Var, exp::Exp),
+    Assign(Var, exp::Exp, AssignType),
     Dec(dec::Dec),
     Exp(exp::Exp),
     IfElse(ifelse::IfElseList),
@@ -41,10 +50,10 @@ impl Stm_ {
             data: StmData::Compound(stmlist),
         })
     }
-    pub fn assign_stm(pos: usize, var: Var, init: exp::Exp) -> Stm {
+    pub fn assign_stm(pos: usize, var: Var, init: exp::Exp, assign_type: AssignType) -> Stm {
         Box::new(Stm_ {
             pos,
-            data: StmData::Assign(var, init),
+            data: StmData::Assign(var, init, assign_type),
         })
     }
     pub fn dec_stm(pos: usize, dec: dec::Dec) -> Stm {

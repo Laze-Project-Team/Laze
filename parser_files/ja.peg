@@ -65,7 +65,7 @@ StmList = Stm*
 Stm = DecStm::stm / AssignStm::stm / CompoundStm::stm / IfStm::stm / WhileStm::stm / UntilStm::stm / RepeatStm::stm / BreakStm::stm / ContinueStm::stm / ReturnStm::stm / LoopStm::stm / ExpStm::stm
 CompoundStm = "{" StmList "}"
 DecStm = Dec
-AssignStm = Var "=" Exp ";"
+AssignStm = NormalAssign::stm / AddAssign::stm / SubAssign::stm / MulAssign::stm / DivAssign::stm
 IfStm = IfElseList
 WhileStm = "(" Exp ")" "の間" Stm
 UntilStm = "(" Exp ")" "まで" Stm
@@ -75,6 +75,12 @@ ContinueStm = "次へ" ";"
 ReturnStm = "終了" "(" Exp ")" ";" / "終了" "(" ")" ";"
 LoopStm = "無限ループ" Stm
 ExpStm = Exp ";"
+
+NormalAssign = Var "=" Exp ";"
+AddAssign = Var "+=" Exp ";"
+SubAssign = Var "-=" Exp ";"
+MulAssign = Var "*=" Exp ";"
+DivAssign = Var "/=" Exp ";"
 
 IfElseList = If::ifelse ( ElseIf::ifelse )* Else::ifelse / If::ifelse (ElseIf::ifelse)*
 If = "もし" "(" Exp ")" "ならば" Stm

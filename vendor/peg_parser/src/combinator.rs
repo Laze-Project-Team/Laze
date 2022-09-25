@@ -9,7 +9,7 @@ pub type Matcher<T> = Rc<dyn Fn(&[char], &mut Parser<T>) -> Result<(), ()>>;
 pub fn parse_str<T: ParserData + Clone + 'static>(str: String) -> Matcher<T> {
     return Rc::new(
         move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
-            // println!("parse_str {:?} in {:?}", str, input);
+            // println!("parse_str {:?}", str);
             let chars: Vec<char> = str.chars().collect();
             if input.starts_with(&chars[..]) {
                 parser.eat(&str);
