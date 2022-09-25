@@ -101,10 +101,14 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
         //     self.data.last().unwrap().keys(),
         //     self.data.len()
         // );
-        match self.data.last() {
+        match self.data.last_mut() {
             Some(map) => {
-                return match map.get(&name) {
-                    Some(data) => Some(data.clone()),
+                return match map.get_mut(&name) {
+                    Some(data) => {
+                        let mut temp = T::null();
+                        std::mem::swap(data, &mut temp);
+                        Some(temp)
+                    }
                     None => None,
                 };
             }

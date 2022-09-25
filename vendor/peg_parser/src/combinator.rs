@@ -1,7 +1,4 @@
-use std::{
-    io::{stderr, Write},
-    rc::Rc,
-};
+use std::rc::Rc;
 
 use regex::{self, Regex};
 
@@ -42,43 +39,37 @@ pub fn parse_any<T: ParserData + Clone + 'static>() -> Matcher<T> {
     );
 }
 
-fn get_char_range(range: String) -> Vec<char> {
-    assert!(range.contains('-'));
-    let mut range_chars = Vec::<char>::new();
-    let mut str_iter = range.chars().into_iter().peekable();
-    while let Some(c) = str_iter.next() {
-        match c {
-            '\\' => {}
-            cbegin => match str_iter.peek() {
-                Some('-') => {
-                    str_iter.next();
-                    match str_iter.peek() {
-                        Some(&cend) => {
-                            str_iter.next();
-                            range_chars
-                                .append(&mut (cbegin..cend).into_iter().collect::<Vec<char>>());
-                            range_chars.push(cend);
-                        }
-                        None => {
-                            let _ = writeln!(stderr(), "Invalid range starting with {}.", cbegin);
-                            return vec![];
-                        }
-                    }
-                }
-                _ => range_chars.push(cbegin),
-            },
-        }
-    }
-    range_chars
-}
+// fn get_char_range(range: String) -> Vec<char> {
+//     assert!(range.contains('-'));
+//     let mut range_chars = Vec::<char>::new();
+//     let mut str_iter = range.chars().into_iter().peekable();
+//     while let Some(c) = str_iter.next() {
+//         match c {
+//             '\\' => {}
+//             cbegin => match str_iter.peek() {
+//                 Some('-') => {
+//                     str_iter.next();
+//                     match str_iter.peek() {
+//                         Some(&cend) => {
+//                             str_iter.next();
+//                             range_chars
+//                                 .append(&mut (cbegin..cend).into_iter().collect::<Vec<char>>());
+//                             range_chars.push(cend);
+//                         }
+//                         None => {
+//                             let _ = writeln!(stderr(), "Invalid range starting with {}.", cbegin);
+//                             return vec![];
+//                         }
+//                     }
+//                 }
+//                 _ => range_chars.push(cbegin),
+//             },
+//         }
+//     }
+//     range_chars
+// }
 
 pub fn parse_range<T: ParserData + Clone + 'static>(range: String) -> Matcher<T> {
-    // let range_chars: Vec<char>;
-    // if range.contains('-') {
-    //     range_chars = get_char_range(range);
-    // } else {
-    //     range_chars = range.chars().collect();
-    // }
     let mut range_str = String::new();
     range_str += "[";
     range_str += range.as_str();

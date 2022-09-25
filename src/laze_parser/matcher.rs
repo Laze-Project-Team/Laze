@@ -628,17 +628,20 @@ pub fn extract_ast(name: String, parser: &mut Parser<ASTNode>) -> ASTNode {
             }
         }
         "UnaryOpExp" | "ProdExp" | "SumExp" | "CompOpExp" | "BinOpExp" => {
-            let new_exp = extract_exp_data(
-                parser.pos,
-                parser.get_data("exp".to_string()),
-                "exp",
-                name.as_str(),
-            );
             let handled_exp = match parser.get_data("op".to_string()) {
                 Some(node) => {
                     let oplist = node.get_operlist_data(parser.pos, "op", name.as_str());
                     if name.as_str() == "UnaryOpExp" {
-                        Exp_::unaryop_exp(parser.pos, oplist, new_exp)
+                        Exp_::unaryop_exp(
+                            parser.pos,
+                            oplist,
+                            extract_exp_data(
+                                parser.pos,
+                                parser.get_data("exp".to_string()),
+                                "exp",
+                                name.as_str(),
+                            ),
+                        )
                     } else {
                         Exp_::binop_exp(
                             parser.pos,
@@ -652,7 +655,12 @@ pub fn extract_ast(name: String, parser: &mut Parser<ASTNode>) -> ASTNode {
                         )
                     }
                 }
-                None => new_exp,
+                None => extract_exp_data(
+                    parser.pos,
+                    parser.get_data("exp".to_string()),
+                    "exp",
+                    name.as_str(),
+                ),
             };
             match parser.get_data_from_parent_scope("exp".to_string()) {
                 Some(node) => match node {
