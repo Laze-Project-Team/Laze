@@ -44,7 +44,7 @@ pub enum ASTNode {
 }
 
 impl ASTNode {
-    pub fn get_var_data(self, pos: usize, name: &str, rule: &str) -> Var {
+    pub fn get_var_data(self, pos: (usize, usize), name: &str, rule: &str) -> Var {
         if let ASTNode::Var(var) = self {
             var
         } else {
@@ -55,7 +55,7 @@ impl ASTNode {
             })
         }
     }
-    pub fn get_dec_data(self, pos: usize, name: &str, rule: &str) -> Dec {
+    pub fn get_dec_data(self, pos: (usize, usize), name: &str, rule: &str) -> Dec {
         match self {
             ASTNode::Dec(dec) => dec,
             ASTNode::DecList(mut declist) => {
@@ -83,7 +83,7 @@ impl ASTNode {
             }
         }
     }
-    pub fn get_declist_data(self, _pos: usize, name: &str, rule: &str) -> DecList {
+    pub fn get_declist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> DecList {
         if let ASTNode::DecList(declist) = self {
             declist
         } else {
@@ -91,7 +91,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_stm_data(self, pos: usize, name: &str, rule: &str) -> Stm {
+    pub fn get_stm_data(self, pos: (usize, usize), name: &str, rule: &str) -> Stm {
         match self {
             ASTNode::Stm(stm) => stm,
             ASTNode::StmList(mut stmlist) => {
@@ -119,7 +119,7 @@ impl ASTNode {
             }
         }
     }
-    pub fn get_stmlist_data(self, _pos: usize, name: &str, rule: &str) -> StmList {
+    pub fn get_stmlist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> StmList {
         if let ASTNode::StmList(stmlist) = self {
             stmlist
         } else {
@@ -127,7 +127,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_exp_data(self, pos: usize, name: &str, rule: &str) -> Exp {
+    pub fn get_exp_data(self, pos: (usize, usize), name: &str, rule: &str) -> Exp {
         match self {
             ASTNode::Exp(exp) => exp,
             ASTNode::ExpList(mut explist) => {
@@ -153,7 +153,7 @@ impl ASTNode {
             }
         }
     }
-    pub fn get_explist_data(self, _pos: usize, name: &str, rule: &str) -> ExpList {
+    pub fn get_explist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> ExpList {
         if let ASTNode::ExpList(explist) = self {
             explist
         } else {
@@ -161,7 +161,12 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_classmembers_data(self, _pos: usize, name: &str, rule: &str) -> ClassMemberList {
+    pub fn get_classmembers_data(
+        self,
+        _pos: (usize, usize),
+        name: &str,
+        rule: &str,
+    ) -> ClassMemberList {
         if let ASTNode::ClassMemberList(members) = self {
             members
         } else {
@@ -169,7 +174,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_ty_data(self, pos: usize, name: &str, rule: &str) -> Type {
+    pub fn get_ty_data(self, pos: (usize, usize), name: &str, rule: &str) -> Type {
         if let ASTNode::Type(ty) = self {
             ty
         } else {
@@ -180,7 +185,7 @@ impl ASTNode {
             })
         }
     }
-    pub fn get_tylist_data(self, _pos: usize, name: &str, rule: &str) -> TypeList {
+    pub fn get_tylist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> TypeList {
         if let ASTNode::TypeList(tylist) = self {
             tylist
         } else {
@@ -188,7 +193,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_field_data(self, pos: usize, name: &str, rule: &str) -> Field {
+    pub fn get_field_data(self, pos: (usize, usize), name: &str, rule: &str) -> Field {
         if let ASTNode::Field(field) = self {
             field
         } else {
@@ -199,7 +204,7 @@ impl ASTNode {
             })
         }
     }
-    pub fn get_oper_data(self, _pos: usize, name: &str, rule: &str) -> Oper {
+    pub fn get_oper_data(self, _pos: (usize, usize), name: &str, rule: &str) -> Oper {
         if let ASTNode::Op(oper) = self {
             oper
         } else {
@@ -207,7 +212,7 @@ impl ASTNode {
             Oper::None
         }
     }
-    pub fn get_fieldlist_data(self, _pos: usize, name: &str, rule: &str) -> FieldList {
+    pub fn get_fieldlist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> FieldList {
         if let ASTNode::FieldList(fieldlist) = self {
             fieldlist
         } else {
@@ -215,7 +220,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_string_data(self, _pos: usize, name: &str, rule: &str) -> String {
+    pub fn get_string_data(self, _pos: (usize, usize), name: &str, rule: &str) -> String {
         if let ASTNode::String(str) = self {
             str
         } else {
@@ -223,7 +228,7 @@ impl ASTNode {
             "".to_string()
         }
     }
-    pub fn get_stringlist_data(self, _pos: usize, name: &str, rule: &str) -> Vec<String> {
+    pub fn get_stringlist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> Vec<String> {
         if let ASTNode::StringList(strlist) = self {
             strlist
         } else {
@@ -231,7 +236,12 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_suffixlist_data(self, _pos: usize, name: &str, rule: &str) -> ExpSuffixList {
+    pub fn get_suffixlist_data(
+        self,
+        _pos: (usize, usize),
+        name: &str,
+        rule: &str,
+    ) -> ExpSuffixList {
         if let ASTNode::ExpSuffixList(suffixlist) = self {
             suffixlist
         } else {
@@ -239,7 +249,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_ifelselist_data(self, _pos: usize, name: &str, rule: &str) -> IfElseList {
+    pub fn get_ifelselist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> IfElseList {
         if let ASTNode::IfElseList(ifelselist) = self {
             ifelselist
         } else {
@@ -247,7 +257,7 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_operlist_data(self, _pos: usize, name: &str, rule: &str) -> OperList {
+    pub fn get_operlist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> OperList {
         if let ASTNode::OperList(oplist) = self {
             oplist
         } else {
@@ -258,14 +268,14 @@ impl ASTNode {
 }
 
 impl ParserData for ASTNode {
-    fn string(str: String) -> Self {
+    fn string(_: (usize, usize), str: String) -> Self {
         Self::String(str)
     }
     fn null() -> Self {
         Self::None
     }
-    fn data(name: &str, parser: &mut Parser<Self>) -> Self {
-        extract_ast(name, parser)
+    fn data(pos: (usize, usize), name: &str, parser: &mut Parser<Self>) -> Self {
+        extract_ast(pos, name, parser)
     }
     fn is_null(&self) -> bool {
         if let Self::None = self {

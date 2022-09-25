@@ -44,9 +44,9 @@ impl<T: Clone + ParserData + 'static> PegParser<T> {
 }
 
 pub trait ParserData: Sized + Clone {
-    fn string(str: String) -> Self;
+    fn string(pos: (usize, usize), str: String) -> Self;
     fn null() -> Self;
-    fn data(name: &str, parser: &mut Parser<Self>) -> Self;
+    fn data(pos: (usize, usize), name: &str, parser: &mut Parser<Self>) -> Self;
     fn is_null(&self) -> bool;
 }
 
@@ -94,7 +94,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
         }
     }
     // filter is_null
-    pub fn get_data(&mut self, name: String) -> Option<T> {
+    pub fn get_data(&mut self, name: &str) -> Option<T> {
         // println!("{}", size_of::<HashMap<&str, T>>());
         // println!(
         //     "{:?} in {}",
@@ -103,7 +103,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
         // );
         match self.data.last_mut() {
             Some(map) => {
-                return match map.get_mut(&name) {
+                return match map.get_mut(&name.to_string()) {
                     Some(data) => {
                         let mut temp = T::null();
                         std::mem::swap(data, &mut temp);
@@ -117,7 +117,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
             }
         }
     }
-    pub fn get_data_from_parent_scope(&mut self, name: String) -> Option<T> {
+    pub fn get_data_from_parent_scope(&mut self, name: &str) -> Option<T> {
         // println!("{}", size_of::<HashMap<&str, T>>());
         // println!("{:?}", self.data.keys());
         let len = self.data.len();
@@ -126,7 +126,7 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
                 .data
                 .get_mut(len - 2)
                 .expect("Stack does not exist.")
-                .get_mut(&name)
+                .get_mut(&name.to_string())
             {
                 Some(data) => {
                     let mut temp = T::null();
@@ -151,6 +151,9 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
     }
     pub fn backtrace(&mut self, pos: usize, data_pos: &(usize, Vec<String>)) {
         self.pos = pos;
+        if self.pos > self.error_pos {
+            self.error_pos = self.pos;
+        }
         // println!("{} and {:?}", data_pos.0, data_pos.1);
         while self.data.len() > data_pos.0 {
             self.data.pop();
@@ -179,7 +182,11 @@ impl<T: Clone + ParserData + 'static> Parser<T> {
         self.data.push(HashMap::new());
         match parse_ref("Start".to_string(), None)(&source_code[..], self) {
             Err(()) => {
-                println!("Could not parse: {}", string);
+                println!(
+                    "Could not parse at pos {}\n Remaining: {:?}",
+                    self.error_pos,
+                    &source_code[self.error_pos..]
+                );
                 return Err("Start Parse failed.");
             }
             _ => {}

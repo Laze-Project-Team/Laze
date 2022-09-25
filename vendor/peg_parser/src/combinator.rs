@@ -77,7 +77,6 @@ pub fn parse_range<T: ParserData + Clone + 'static>(range: String) -> Matcher<T>
     let range_regex = Regex::new(range_str.as_str()).expect("Range Regex Parsing Failed.");
     return Rc::new(
         move |input: &[char], parser: &mut Parser<T>| -> Result<(), ()> {
-            // println!("parse_range: {:?}", input);
             if input.len() > 0 {
                 if let Some(ch) = range_regex.captures(input[0].to_string().as_str()) {
                     parser.eat(&ch[0].to_string());
@@ -196,9 +195,10 @@ pub fn parse_ref<T: ParserData + Clone + 'static>(
                 panic!("Could not find {} in the grammar.", name);
             }
             parser.enter_scope();
+            let pos = parser.pos;
             match matcher(input, parser) {
                 Ok(()) => {
-                    let data = T::data(name.as_str(), parser);
+                    let data = T::data((pos, parser.pos), name.as_str(), parser);
                     // println!("parsed: {name}");
                     parser.exit_scope();
                     match save_name.clone() {
@@ -227,7 +227,10 @@ pub fn capture_string<T: ParserData + Clone + 'static>(
                 Ok(()) => {
                     parser.add_data(
                         name.clone(),
-                        T::string((&input[0..parser.pos - pos]).iter().collect()),
+                        T::string(
+                            (pos, parser.pos),
+                            (&input[0..parser.pos - pos]).iter().collect(),
+                        ),
                     );
                     Ok(())
                 }

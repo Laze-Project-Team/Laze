@@ -48,18 +48,17 @@ impl<T: ParserData + Clone> PegMatcher<T> {
 }
 
 impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
-    fn string(str: String) -> Self {
+    fn string(_: (usize, usize), str: String) -> Self {
         Self::String(str)
     }
     fn null() -> Self {
         Self::None
     }
-    fn data(name: &str, parser: &mut Parser<Self>) -> Self {
+    fn data(_: (usize, usize), name: &str, parser: &mut Parser<Self>) -> Self {
         // println!("Reducing: {}", name);
         match name {
             "StringContent" => {
-                let content =
-                    extract_string_data(parser.get_data("content".to_string()), "content", name);
+                let content = extract_string_data(parser.get_data("content"), "content", name);
                 let newcontent = match content.as_str() {
                     "\\\"" => "\"".to_string(),
                     "\\\\" => "\\".to_string(),
@@ -71,12 +70,8 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
             }
             "String" => Self::Matcher(parse_seq(vec![
                 parse_str(
-                    extract_string_data(
-                        parser.get_data("StringContent".to_string()),
-                        "StringContent",
-                        name,
-                    )
-                    .clone(),
+                    extract_string_data(parser.get_data("StringContent"), "StringContent", name)
+                        .clone(),
                 ),
                 parse_many(parse_or(vec![
                     parse_str(" ".to_string()),
@@ -86,27 +81,21 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                 ])),
             ])),
             "RangeContent" => Self::String(extract_string_data(
-                parser.get_data("content".to_string()),
+                parser.get_data("content"),
                 "content",
                 name,
             )),
             "Range" => Self::Matcher(parse_range(extract_string_data(
-                parser.get_data("RangeContent".to_string()),
+                parser.get_data("RangeContent"),
                 "RangeContent",
                 name,
             ))),
-            "NonTerminal" => Self::String(extract_string_data(
-                parser.get_data("name".to_string()),
-                "name",
-                name,
-            )),
+            "NonTerminal" => {
+                Self::String(extract_string_data(parser.get_data("name"), "name", name))
+            }
             "NonTerminalToken" => Self::Matcher(parse_ref(
-                extract_string_data(
-                    parser.get_data("NonTerminal".to_string()),
-                    "NonTerminal",
-                    name,
-                ),
-                match parser.get_data("Rename".to_string()) {
+                extract_string_data(parser.get_data("NonTerminal"), "NonTerminal", name),
+                match parser.get_data("Rename") {
                     Some(matcher) => match matcher {
                         Self::String(str) => Some(str),
                         _ => {
@@ -116,19 +105,15 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                     None => None,
                 },
             )),
-            "Token" => match parser.get_data_from_parent_scope("Token".to_string()) {
+            "Token" => match parser.get_data_from_parent_scope("Token") {
                 Some(matcher) => match matcher {
                     PegMatcher::Matcher(m) => Self::Matchers(vec![
                         m,
-                        extract_matcher_data(
-                            parser.get_data("tokendata".to_string()),
-                            "tokendata",
-                            name,
-                        ),
+                        extract_matcher_data(parser.get_data("tokendata"), "tokendata", name),
                     ]),
                     PegMatcher::Matchers(mut m) => {
                         m.push(extract_matcher_data(
-                            parser.get_data("tokendata".to_string()),
+                            parser.get_data("tokendata"),
                             "tokendata",
                             name,
                         ));
@@ -139,38 +124,38 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                     }
                 },
                 None => Self::Matchers(vec![extract_matcher_data(
-                    parser.get_data("tokendata".to_string()),
+                    parser.get_data("tokendata"),
                     "tokendata",
                     name,
                 )]),
             },
             "AnyToken" => Self::Matcher(parse_any()),
             "RawToken" => Self::Matcher(extract_matcher_data(
-                parser.get_data("tokendata".to_string()),
+                parser.get_data("tokendata"),
                 "tokendata",
                 name,
             )),
             "ManyToken" => Self::Matcher(parse_many(extract_matcher_data(
-                parser.get_data("RawToken".to_string()),
+                parser.get_data("RawToken"),
                 "RawToken",
                 name,
             ))),
             "MoreThanOneToken" => Self::Matcher(parse_more_than_one(extract_matcher_data(
-                parser.get_data("RawToken".to_string()),
+                parser.get_data("RawToken"),
                 "RawToken",
                 name,
             ))),
             "NotToken" => Self::Matcher(parse_not(extract_matcher_data(
-                parser.get_data("RawToken".to_string()),
+                parser.get_data("RawToken"),
                 "RawToken",
                 name,
             ))),
-            "Tokens" => match parser.get_data_from_parent_scope("Tokens".to_string()) {
+            "Tokens" => match parser.get_data_from_parent_scope("Tokens") {
                 Some(matcher) => match matcher {
                     PegMatcher::Matcher(m) => {
                         let mut matchers = vec![m];
                         matchers.push(parse_seq(extract_matchers_data(
-                            parser.get_data("Token".to_string()),
+                            parser.get_data("Token"),
                             "Token",
                             name,
                         )));
@@ -178,7 +163,7 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                     }
                     PegMatcher::Matchers(mut m) => {
                         m.push(parse_seq(extract_matchers_data(
-                            parser.get_data("Token".to_string()),
+                            parser.get_data("Token"),
                             "Token",
                             name,
                         )));
@@ -189,17 +174,16 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                     }
                 },
                 None => {
-                    let matchers =
-                        extract_matchers_data(parser.get_data("Token".to_string()), "Token", name);
+                    let matchers = extract_matchers_data(parser.get_data("Token"), "Token", name);
                     Self::Matcher(parse_seq(matchers))
                 }
             },
             "ParenTokens" => Self::Matcher(extract_matcher_data(
-                parser.get_data("OrTokens".to_string()),
+                parser.get_data("OrTokens"),
                 "OrTokens",
                 name,
             )),
-            "OrTokens" => match parser.get_data("Tokens".to_string()) {
+            "OrTokens" => match parser.get_data("Tokens") {
                 Some(m) => match m {
                     PegMatcher::Matcher(m) => PegMatcher::Matcher(m),
                     PegMatcher::Matchers(m) => PegMatcher::Matcher(parse_or(m)),
@@ -212,43 +196,31 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                 }
             },
             "CaptureString" => Self::Matcher(capture_string(
-                extract_string_data(
-                    parser.get_data("NonTerminal".to_string()),
-                    "NonTerminal",
-                    name,
-                ),
-                extract_matcher_data(parser.get_data("OrTokens".to_string()), "OrTokens", name),
+                extract_string_data(parser.get_data("NonTerminal"), "NonTerminal", name),
+                extract_matcher_data(parser.get_data("OrTokens"), "OrTokens", name),
             )),
             // look in parent scope
-            "Rule" => match parser.get_data_from_parent_scope("Rule".to_string()) {
+            "Rule" => match parser.get_data_from_parent_scope("Rule") {
                 Some(matcher) => match matcher {
                     PegMatcher::Rule(r) => Self::Rules(vec![
                         r,
                         (
                             extract_string_data(
-                                parser.get_data("NonTerminal".to_string()),
+                                parser.get_data("NonTerminal"),
                                 "NonTerminal",
                                 name,
                             ),
-                            extract_matcher_data(
-                                parser.get_data("OrTokens".to_string()),
-                                "OrTokens",
-                                name,
-                            ),
+                            extract_matcher_data(parser.get_data("OrTokens"), "OrTokens", name),
                         ),
                     ]),
                     PegMatcher::Rules(mut r) => {
                         r.push((
                             extract_string_data(
-                                parser.get_data("NonTerminal".to_string()),
+                                parser.get_data("NonTerminal"),
                                 "NonTerminal",
                                 name,
                             ),
-                            extract_matcher_data(
-                                parser.get_data("OrTokens".to_string()),
-                                "OrTokens",
-                                name,
-                            ),
+                            extract_matcher_data(parser.get_data("OrTokens"), "OrTokens", name),
                         ));
                         Self::Rules(r)
                     }
@@ -257,24 +229,12 @@ impl<T: ParserData + Clone + 'static> ParserData for PegMatcher<T> {
                     }
                 },
                 None => Self::Rules(vec![(
-                    extract_string_data(
-                        parser.get_data("NonTerminal".to_string()),
-                        "NonTerminal",
-                        "Rule",
-                    ),
-                    extract_matcher_data(parser.get_data("OrTokens".to_string()), "OrTokens", name),
+                    extract_string_data(parser.get_data("NonTerminal"), "NonTerminal", "Rule"),
+                    extract_matcher_data(parser.get_data("OrTokens"), "OrTokens", name),
                 )]),
             },
-            "Rules" => Self::Rules(extract_rules_data(
-                parser.get_data("Rule".to_string()),
-                "Rule",
-                name,
-            )),
-            "Start" => Self::Rules(extract_rules_data(
-                parser.get_data("Rules".to_string()),
-                "Rules",
-                name,
-            )),
+            "Rules" => Self::Rules(extract_rules_data(parser.get_data("Rule"), "Rule", name)),
+            "Start" => Self::Rules(extract_rules_data(parser.get_data("Rules"), "Rules", name)),
             str => {
                 let _ = writeln!(stderr(), "What is this token: {}.", str);
                 Self::None

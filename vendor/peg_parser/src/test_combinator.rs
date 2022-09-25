@@ -7,13 +7,13 @@ use std::collections::HashMap;
 use std::io::{stderr, Write};
 
 impl ParserData for () {
-    fn string(_: String) -> Self {
+    fn string(_: (usize, usize), _: String) -> Self {
         ()
     }
     fn null() -> Self {
         ()
     }
-    fn data(_: &str, _: &mut Parser<()>) -> Self {
+    fn data(_: (usize, usize), _: &str, _: &mut Parser<()>) -> Self {
         ()
     }
     fn is_null(&self) -> bool {

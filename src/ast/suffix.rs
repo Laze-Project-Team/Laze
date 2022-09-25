@@ -5,7 +5,7 @@ pub type ExpSuffix = Box<ExpSuffix_>;
 
 #[derive(Clone, Debug)]
 pub struct ExpSuffix_ {
-    pub pos: usize,
+    pub pos: (usize, usize),
     pub data: SuffixData,
 }
 
@@ -18,25 +18,25 @@ pub enum SuffixData {
 }
 
 impl ExpSuffix_ {
-    pub fn call_suffix(pos: usize, explist: ExpList) -> ExpSuffix {
+    pub fn call_suffix(pos: (usize, usize), explist: ExpList) -> ExpSuffix {
         Box::new(ExpSuffix_ {
             pos,
             data: SuffixData::Call(explist),
         })
     }
-    pub fn dot_suffix(pos: usize, field: Exp) -> ExpSuffix {
+    pub fn dot_suffix(pos: (usize, usize), field: Exp) -> ExpSuffix {
         Box::new(ExpSuffix_ {
             pos,
             data: SuffixData::Dot(field),
         })
     }
-    pub fn arrow_suffix(pos: usize, field: Exp) -> ExpSuffix {
+    pub fn arrow_suffix(pos: (usize, usize), field: Exp) -> ExpSuffix {
         Box::new(ExpSuffix_ {
             pos,
             data: SuffixData::Arrow(field),
         })
     }
-    pub fn subscript_suffix(pos: usize, index: Exp) -> ExpSuffix {
+    pub fn subscript_suffix(pos: (usize, usize), index: Exp) -> ExpSuffix {
         Box::new(ExpSuffix_ {
             pos,
             data: SuffixData::Subscript(index),

@@ -4,7 +4,7 @@ pub type IfElseList = Vec<IfElse>;
 pub type IfElse = Box<IfElse_>;
 #[derive(Clone, Debug)]
 pub struct IfElse_ {
-    pub pos: usize,
+    pub pos: (usize, usize),
     pub data: IfElseData,
 }
 
@@ -16,19 +16,19 @@ pub enum IfElseData {
 }
 
 impl IfElse_ {
-    pub fn if_(pos: usize, test: Exp, body: Stm) -> IfElse {
+    pub fn if_(pos: (usize, usize), test: Exp, body: Stm) -> IfElse {
         Box::new(IfElse_ {
             pos,
             data: IfElseData::If(test, body),
         })
     }
-    pub fn else_if(pos: usize, test: Exp, body: Stm) -> IfElse {
+    pub fn else_if(pos: (usize, usize), test: Exp, body: Stm) -> IfElse {
         Box::new(IfElse_ {
             pos,
             data: IfElseData::ElseIf(test, body),
         })
     }
-    pub fn else_(pos: usize, body: Stm) -> IfElse {
+    pub fn else_(pos: (usize, usize), body: Stm) -> IfElse {
         Box::new(IfElse_ {
             pos,
             data: IfElseData::Else(body),
