@@ -7,7 +7,7 @@ VarDecNoInit = Type ":" Var ";"
 VarDecInit = Type ":" Var "=" Exp ";"
 VarDec = VarDecNoInit::vardec / VarDecInit::vardec
 FuncDec = "関数" ":" ID "(" FieldList::params ")" "=>" "(" FieldList::result ")" "{" StmList "}"
-TemplateDec = "型" "<" IDList ">" Dec
+TemplateDec = "型" "<" IDList ">" ":" Dec
 ClassDec = "クラス" ":" ID "{" ClassMemberList "}" / "クラス" ":" ID "<-" IDList "{" ClassMemberList "}"
 JsImportDec = "関数" ":" ID "(" FieldList::params ")" "=>" "(" FieldList::result ")" "=" "js読み込み" "(" String::module "," String::name ")" ";"
 JsExportDec = "js書き出し" "(" ID "," String ")" ";"
@@ -93,7 +93,7 @@ PrimaryType = NameType::type / ParenType::type / GenericsType::type
 PointerType = PrimaryType "*"
 ArrayType = PrimaryType ( "[" Exp::exp "]" )*
 ParenType = "(" Type ")"
-NameType = { "整数" / "実数" / "文字" / "真偽" / ID : type }
+NameType = { ( "整数" / "実数" / "文字" / "真偽" ) !ID / ID : type }
 GenericsType = ID "<" TypeList ">"
 
 Var = PointerVar::var

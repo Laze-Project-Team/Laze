@@ -1,4 +1,4 @@
-use super::exp::{Exp, ExpList};
+use super::exp::ExpList;
 
 pub type Var = Box<Var_>;
 
@@ -12,7 +12,7 @@ pub struct Var_ {
 pub enum VarData {
     Simple(String),
     Call(Var, ExpList),
-    Array(Var, Exp),
+    Array(Var, ExpList),
     Pointer(Var),
     None,
 }
@@ -30,7 +30,7 @@ impl Var_ {
             data: VarData::Call(var, elist),
         })
     }
-    pub fn array_var(pos: (usize, usize), var: Var, exp: Exp) -> Var {
+    pub fn array_var(pos: (usize, usize), var: Var, exp: ExpList) -> Var {
         Box::new(Var_ {
             pos,
             data: VarData::Array(var, exp),

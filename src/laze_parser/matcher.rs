@@ -87,7 +87,7 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             Some(exp) => ASTNode::Var(Var_::array_var(
                 pos,
                 extract_var_data(pos, parser.get_data("CallVar"), "CallVar", name),
-                exp.get_exp_data(pos, "exp", name),
+                exp.get_explist_data(pos, "exp", name),
             )),
             None => parser.get_data("CallVar").expect("CallVar in ArrayVar"),
         },

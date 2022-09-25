@@ -229,11 +229,13 @@ impl ASTNode {
         }
     }
     pub fn get_stringlist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> Vec<String> {
-        if let ASTNode::StringList(strlist) = self {
-            strlist
-        } else {
-            let _ = writeln!(stderr(), "{name} in {rule} is not a string list.");
-            vec![]
+        match self {
+            ASTNode::StringList(strlist) => strlist,
+            ASTNode::String(str) => vec![str],
+            _ => {
+                let _ = writeln!(stderr(), "{name} in {rule} is not a string list.");
+                vec![]
+            }
         }
     }
     pub fn get_suffixlist_data(
