@@ -27,16 +27,16 @@ pub enum AssignType {
 #[derive(Clone, Debug)]
 pub enum StmData {
     Compound(StmList),
-    Assign(Var, exp::Exp, AssignType),
+    Assign(Var, exp::ASTExp, AssignType),
     Dec(dec::Dec),
-    Exp(exp::Exp),
+    Exp(exp::ASTExp),
     IfElse(ifelse::IfElseList),
-    While(exp::Exp, Stm),
-    For(Stm, exp::Exp, Stm, Stm),
-    Call(exp::Exp, exp::ExpList),
-    Return(exp::Exp),
+    While(exp::ASTExp, Stm),
+    For(Stm, exp::ASTExp, Stm, Stm),
+    Call(exp::ASTExp, exp::ASTExpList),
+    Return(exp::ASTExp),
     Loop(Stm),
-    Repeat(exp::Exp, Stm),
+    Repeat(exp::ASTExp, Stm),
     Continue,
     Break,
 
@@ -53,7 +53,7 @@ impl Stm_ {
     pub fn assign_stm(
         pos: (usize, usize),
         var: Var,
-        init: exp::Exp,
+        init: exp::ASTExp,
         assign_type: AssignType,
     ) -> Stm {
         Box::new(Stm_ {
@@ -67,7 +67,7 @@ impl Stm_ {
             data: StmData::Dec(dec),
         })
     }
-    pub fn exp_stm(pos: (usize, usize), exp: exp::Exp) -> Stm {
+    pub fn exp_stm(pos: (usize, usize), exp: exp::ASTExp) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Exp(exp),
@@ -79,25 +79,25 @@ impl Stm_ {
             data: StmData::IfElse(ifelselist),
         })
     }
-    pub fn while_stm(pos: (usize, usize), test: exp::Exp, body: Stm) -> Stm {
+    pub fn while_stm(pos: (usize, usize), test: exp::ASTExp, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::While(test, body),
         })
     }
-    pub fn for_stm(pos: (usize, usize), init: Stm, test: exp::Exp, incr: Stm, body: Stm) -> Stm {
+    pub fn for_stm(pos: (usize, usize), init: Stm, test: exp::ASTExp, incr: Stm, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::For(init, test, incr, body),
         })
     }
-    pub fn call_stm(pos: (usize, usize), func: exp::Exp, args: exp::ExpList) -> Stm {
+    pub fn call_stm(pos: (usize, usize), func: exp::ASTExp, args: exp::ASTExpList) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Call(func, args),
         })
     }
-    pub fn return_stm(pos: (usize, usize), val: exp::Exp) -> Stm {
+    pub fn return_stm(pos: (usize, usize), val: exp::ASTExp) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Return(val),
@@ -121,7 +121,7 @@ impl Stm_ {
             data: StmData::Loop(body),
         })
     }
-    pub fn repeat_stm(pos: (usize, usize), count: exp::Exp, body: Stm) -> Stm {
+    pub fn repeat_stm(pos: (usize, usize), count: exp::ASTExp, body: Stm) -> Stm {
         Box::new(Stm_ {
             pos,
             data: StmData::Repeat(count, body),

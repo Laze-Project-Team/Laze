@@ -1,96 +1,97 @@
-use super::{field, op, stm, suffix::ExpSuffixList};
+use super::{field, op, stm, suffix::ASTExpSuffixList, var::Var};
 
-pub type Exp = Box<Exp_>;
-pub type ExpList = Vec<Exp>;
+pub type ASTExp = Box<ASTExp_>;
+pub type ASTExpList = Vec<ASTExp>;
 
 #[derive(Clone, Debug)]
-pub struct Exp_ {
+pub struct ASTExp_ {
     pub pos: (usize, usize),
-    pub data: ExpData,
+    pub data: ASTExpData,
 }
 
 #[derive(Clone, Debug)]
-pub enum ExpData {
+pub enum ASTExpData {
     Int(String),
+    Short(String),
     Real(String),
     Char(char),
     String(String),
     Bool(bool),
 
-    Var(String),
-    Call(Exp, ExpList),
-    BinOp(op::OperList, ExpList),
-    UnaryOp(op::OperList, Exp),
+    Var(Var),
+    Call(ASTExp, ASTExpList),
+    BinOp(op::OperList, ASTExpList),
+    UnaryOp(op::OperList, ASTExp),
     Func(field::FieldList, field::FieldList, stm::Stm),
-    Field(Exp, String),
-    Array(ExpList),
-    SizeOf(Exp),
-    Paren(Exp),
-    Suffix(Exp, ExpSuffixList),
+    Field(ASTExp, String),
+    Array(ASTExpList),
+    SizeOf(ASTExp),
+    Paren(ASTExp),
+    Suffix(ASTExp, ASTExpSuffixList),
 
     None,
 }
 
-impl Exp_ {
-    pub fn none_exp(pos: (usize, usize)) -> Exp {
-        Box::new(Exp_ {
+impl ASTExp_ {
+    pub fn none_exp(pos: (usize, usize)) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::None,
+            data: ASTExpData::None,
         })
     }
-    pub fn int_exp(pos: (usize, usize), data: String) -> Exp {
-        Box::new(Exp_ {
+    pub fn int_exp(pos: (usize, usize), data: String) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::String(data),
+            data: ASTExpData::String(data),
         })
     }
-    pub fn real_exp(pos: (usize, usize), data: String) -> Exp {
-        Box::new(Exp_ {
+    pub fn real_exp(pos: (usize, usize), data: String) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Real(data),
+            data: ASTExpData::Real(data),
         })
     }
-    pub fn char_exp(pos: (usize, usize), data: char) -> Exp {
-        Box::new(Exp_ {
+    pub fn char_exp(pos: (usize, usize), data: char) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Char(data),
+            data: ASTExpData::Char(data),
         })
     }
-    pub fn string_exp(pos: (usize, usize), data: String) -> Exp {
-        Box::new(Exp_ {
+    pub fn string_exp(pos: (usize, usize), data: String) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::String(data),
+            data: ASTExpData::String(data),
         })
     }
-    pub fn bool_exp(pos: (usize, usize), data: bool) -> Exp {
-        Box::new(Exp_ {
+    pub fn bool_exp(pos: (usize, usize), data: bool) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Bool(data),
+            data: ASTExpData::Bool(data),
         })
     }
 
-    pub fn var_exp(pos: (usize, usize), data: String) -> Exp {
-        Box::new(Exp_ {
+    pub fn var_exp(pos: (usize, usize), data: Var) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Var(data),
+            data: ASTExpData::Var(data),
         })
     }
-    pub fn call_exp(pos: (usize, usize), func: Exp, args: ExpList) -> Exp {
-        Box::new(Exp_ {
+    pub fn call_exp(pos: (usize, usize), func: ASTExp, args: ASTExpList) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Call(func, args),
+            data: ASTExpData::Call(func, args),
         })
     }
-    pub fn binop_exp(pos: (usize, usize), oplist: op::OperList, explist: ExpList) -> Exp {
-        Box::new(Exp_ {
+    pub fn binop_exp(pos: (usize, usize), oplist: op::OperList, explist: ASTExpList) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::BinOp(oplist, explist),
+            data: ASTExpData::BinOp(oplist, explist),
         })
     }
-    pub fn unaryop_exp(pos: (usize, usize), oplist: op::OperList, exp: Exp) -> Exp {
-        Box::new(Exp_ {
+    pub fn unaryop_exp(pos: (usize, usize), oplist: op::OperList, exp: ASTExp) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::UnaryOp(oplist, exp),
+            data: ASTExpData::UnaryOp(oplist, exp),
         })
     }
     pub fn func_exp(
@@ -98,40 +99,40 @@ impl Exp_ {
         params: field::FieldList,
         result: field::FieldList,
         stm: stm::Stm,
-    ) -> Exp {
-        Box::new(Exp_ {
+    ) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Func(params, result, stm),
+            data: ASTExpData::Func(params, result, stm),
         })
     }
-    pub fn field_exp(pos: (usize, usize), field: Exp, member: String) -> Exp {
-        Box::new(Exp_ {
+    pub fn field_exp(pos: (usize, usize), field: ASTExp, member: String) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Field(field, member),
+            data: ASTExpData::Field(field, member),
         })
     }
-    pub fn array_exp(pos: (usize, usize), explist: ExpList) -> Exp {
-        Box::new(Exp_ {
+    pub fn array_exp(pos: (usize, usize), explist: ASTExpList) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Array(explist),
+            data: ASTExpData::Array(explist),
         })
     }
-    pub fn sizeof_exp(pos: (usize, usize), var: Exp) -> Exp {
-        Box::new(Exp_ {
+    pub fn sizeof_exp(pos: (usize, usize), var: ASTExp) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::SizeOf(var),
+            data: ASTExpData::SizeOf(var),
         })
     }
-    pub fn paren_exp(pos: (usize, usize), exp: Exp) -> Exp {
-        Box::new(Exp_ {
+    pub fn paren_exp(pos: (usize, usize), exp: ASTExp) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Paren(exp),
+            data: ASTExpData::Paren(exp),
         })
     }
-    pub fn suffix_exp(pos: (usize, usize), exp: Exp, suffix: ExpSuffixList) -> Exp {
-        Box::new(Exp_ {
+    pub fn suffix_exp(pos: (usize, usize), exp: ASTExp, suffix: ASTExpSuffixList) -> ASTExp {
+        Box::new(ASTExp_ {
             pos,
-            data: ExpData::Suffix(exp, suffix),
+            data: ASTExpData::Suffix(exp, suffix),
         })
     }
 }

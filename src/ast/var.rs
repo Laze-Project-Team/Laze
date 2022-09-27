@@ -1,4 +1,4 @@
-use super::exp::ExpList;
+use super::suffix::ASTExpSuffixList;
 
 pub type Var = Box<Var_>;
 
@@ -11,8 +11,7 @@ pub struct Var_ {
 #[derive(Clone, Debug)]
 pub enum VarData {
     Simple(String),
-    Call(Var, ExpList),
-    Array(Var, ExpList),
+    SuffixVar(Var, ASTExpSuffixList),
     Pointer(Var),
     None,
 }
@@ -24,16 +23,10 @@ impl Var_ {
             data: VarData::Simple(name),
         })
     }
-    pub fn call_var(pos: (usize, usize), var: Var, elist: ExpList) -> Var {
+    pub fn suffix_var(pos: (usize, usize), var: Var, suffixlist: ASTExpSuffixList) -> Var {
         Box::new(Var_ {
             pos,
-            data: VarData::Call(var, elist),
-        })
-    }
-    pub fn array_var(pos: (usize, usize), var: Var, exp: ExpList) -> Var {
-        Box::new(Var_ {
-            pos,
-            data: VarData::Array(var, exp),
+            data: VarData::SuffixVar(var, suffixlist),
         })
     }
     pub fn pointer_var(pos: (usize, usize), var: Var) -> Var {

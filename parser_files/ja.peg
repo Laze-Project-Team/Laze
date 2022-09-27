@@ -26,15 +26,15 @@ BinOpExp = CompOpExp::exp ((AndOp::op / OrOp::op) CompOpExp::exp)*
 CompOpExp = SumExp::exp ((EqOp::op / NeOp::op / LtOp::op / LeOp::op / GtOp::op / GeOp::op) SumExp::exp)*
 SumExp = ProdExp::exp ((AddOp::op / SubOp::op) ProdExp::exp)*
 ProdExp = UnaryOpExp::exp ((MulOp::op / DivOp::op) UnaryOpExp::exp)*
-UnaryOpExp = (SubOp::op / DerefOp::op / AddressOp::op / NotOp::op)* PostfixExp::exp
-PostfixExp = PrimaryExp::exp ( CallSuffix::suffix / DotSuffix::suffix / ArrowSuffix::suffix / SubscriptSuffix::suffix )*
-PrimaryExp = ConstantExp::exp / IDExp::exp / ParenExp::exp / ArrayExp::exp / FuncExp::exp / SizeOfExp::exp
+UnaryOpExp = (SubOp::op / DerefOp::op / AddressOp::op / NotOp::op)* PrimaryExp::exp
+PrimaryExp = ConstantExp::exp / VarExp::exp / ParenExp::exp / ArrayExp::exp / FuncExp::exp / SizeOfExp::exp
 ConstantExp = RealExp::exp / IntExp::exp / StringExp::exp
 
 ArrayExp = "[" ExpList "]"
 ParenExp = "(" Exp::exp ")"
 SizeOfExp = "メモリサイズ" "(" Exp::exp ")"
 FuncExp = "(" FieldList::params ")" "=>" "(" FieldList::result ")" Stm
+VarExp = Var
 
 AndOp = "&&"
 OrOp = "||"
@@ -51,15 +51,10 @@ DivOp = "/"
 DerefOp = "*"
 AddressOp = "&"
 NotOp = "!"
-CallSuffix = "(" ExpList::explist ")"
-DotSuffix = "." IDExp::exp
-ArrowSuffix = "->" IDExp::exp
-SubscriptSuffix = "[" Exp::exp "]"
 
 IntExp = Integer
 RealExp = Real
 StringExp = String
-IDExp = ID
 
 StmList = Stm*
 Stm = DecStm::stm / AssignStm::stm / CompoundStm::stm / IfStm::stm / WhileStm::stm / UntilStm::stm / RepeatStm::stm / BreakStm::stm / ContinueStm::stm / ReturnStm::stm / LoopStm::stm / ExpStm::stm
@@ -88,19 +83,30 @@ ElseIf = "でなければもし" "(" Exp ")" "ならば" Stm
 Else = "でなければ" Stm
 
 Type = PointerType::type / ArrayType::type
-PrimaryType = NameType::type / ParenType::type / GenericsType::type
+PrimaryType = IntType::type / ShortType::type / RealType::type / CharType::type / BoolType::type / NameType::type / ParenType::type / GenericsType::type
 
 PointerType = PrimaryType "*"
 ArrayType = PrimaryType ( "[" Exp::exp "]" )*
 ParenType = "(" Type ")"
-NameType = { ( "整数" / "実数" / "文字" / "真偽" ) !ID / ID : type }
+NameType = ID
 GenericsType = ID "<" TypeList ">"
+IntType = "整数" !ID
+ShortType = "整数32" !ID
+RealType = "実数" !ID
+CharType = "文字" !ID
+BoolType = "真偽" !ID
 
 Var = PointerVar::var
+ParenVar = "(" Var ")"
 SimpleVar = ID
-CallVar = SimpleVar ("(" ExpList::exp ")")*
-ArrayVar = CallVar ("[" Exp::exp "]")*
-PointerVar = {"*" ArrayVar / ArrayVar : pointer}
+PrimaryVar = SimpleVar::var / ParenVar::var
+SuffixVar = PrimaryVar ( CallSuffix::suffix / DotSuffix::suffix / ArrowSuffix::suffix / SubscriptSuffix::suffix )*
+PointerVar = {("*")* SuffixVar : pointer}
+
+CallSuffix = "(" ExpList::explist ")"
+DotSuffix = "." ID
+ArrowSuffix = "->" ID
+SubscriptSuffix = "[" Exp::exp "]"
 
 IDList = ID ("," ID)*
 ID = { [㐀-龯ぁ-んァ-ヶa-zA-Z_ー] [㐀-龯ぁ-んァ-ヶa-zA-Z0-9０-９_ー]* " "* : id }

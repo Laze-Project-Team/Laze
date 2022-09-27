@@ -1,4 +1,4 @@
-use super::{exp::Exp, stm::Stm};
+use super::{exp::ASTExp, stm::Stm};
 
 pub type IfElseList = Vec<IfElse>;
 pub type IfElse = Box<IfElse_>;
@@ -10,19 +10,19 @@ pub struct IfElse_ {
 
 #[derive(Clone, Debug)]
 pub enum IfElseData {
-    If(Exp, Stm),
-    ElseIf(Exp, Stm),
+    If(ASTExp, Stm),
+    ElseIf(ASTExp, Stm),
     Else(Stm),
 }
 
 impl IfElse_ {
-    pub fn if_(pos: (usize, usize), test: Exp, body: Stm) -> IfElse {
+    pub fn if_(pos: (usize, usize), test: ASTExp, body: Stm) -> IfElse {
         Box::new(IfElse_ {
             pos,
             data: IfElseData::If(test, body),
         })
     }
-    pub fn else_if(pos: (usize, usize), test: Exp, body: Stm) -> IfElse {
+    pub fn else_if(pos: (usize, usize), test: ASTExp, body: Stm) -> IfElse {
         Box::new(IfElse_ {
             pos,
             data: IfElseData::ElseIf(test, body),

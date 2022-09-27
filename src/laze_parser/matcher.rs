@@ -5,12 +5,12 @@ use peg_parser::Parser;
 use crate::ast::{
     ast::ASTNode,
     dec::{ClassMemberList, Dec_, MemberList, MemberSpecifier},
-    exp::Exp_,
+    exp::ASTExp_,
     field::Field_,
     ifelse::IfElse_,
     op::{string_to_oper, Oper},
     stm::{AssignType, Stm_},
-    suffix::ExpSuffix_,
+    suffix::ASTExpSuffix_,
     ty::Type_,
     var::Var_,
 };
@@ -75,32 +75,45 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             pos,
             extract_string_data(pos, parser.get_data("ID"), "ID", name),
         )),
-        "CallVar" => match parser.get_data("exp") {
-            Some(node) => ASTNode::Var(Var_::call_var(
-                pos,
-                extract_var_data(pos, parser.get_data("SimpleVar"), "SimpleVar", name),
-                node.get_explist_data(pos, "CallVar", name),
-            )),
-            None => parser.get_data("SimpleVar").expect("SimpleVar in CallVar"),
-        },
-        "ArrayVar" => match parser.get_data("exp") {
-            Some(exp) => ASTNode::Var(Var_::array_var(
-                pos,
-                extract_var_data(pos, parser.get_data("CallVar"), "CallVar", name),
-                exp.get_explist_data(pos, "exp", name),
-            )),
-            None => parser.get_data("CallVar").expect("CallVar in ArrayVar"),
-        },
+        "ParenVar" => parser
+            .get_data("Var")
+            .expect("Could not find Var in ParenVar."),
+        "PrimaryVar" => parser
+            .get_data("var")
+            .expect("Could not find var in PrimaryVar."),
+        "SuffixVar" => {
+            let suffix = extract_suffixlist_data(pos, parser.get_data("suffix"), "suffix", name);
+            if suffix.len() > 0 {
+                ASTNode::Var(Var_::suffix_var(
+                    pos,
+                    extract_var_data(pos, parser.get_data("PrimaryVar"), "PrimaryVar", name),
+                    suffix,
+                ))
+            } else {
+                parser
+                    .get_data("PrimaryVar")
+                    .expect("Could not find PrimaryVar in SuffixVar.")
+            }
+        }
         "PointerVar" => match parser.get_data("pointer") {
             Some(node) => {
                 if let ASTNode::String(str) = node {
                     if str.starts_with("*") {
-                        ASTNode::Var(Var_::pointer_var(
+                        let mut var = Var_::pointer_var(
                             pos,
-                            extract_var_data(pos, parser.get_data("ArrayVar"), "ArrayVar", name),
-                        ))
+                            extract_var_data(pos, parser.get_data("SuffixVar"), "SuffixVar", name),
+                        );
+                        for index in 1..str.len() {
+                            let slice = &str[index..index + 1];
+                            if slice == "*" {
+                                var = Var_::pointer_var(pos, var);
+                            } else {
+                                break;
+                            }
+                        }
+                        ASTNode::Var(var)
                     } else {
-                        parser.get_data("ArrayVar").expect("ArrayVar")
+                        parser.get_data("SuffixVar").expect("SuffixVar")
                     }
                 } else {
                     ASTNode::None
@@ -113,9 +126,14 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             extract_ty_data(pos, parser.get_data("PrimaryType"), "ParenType", name),
         )),
         "ParenType" => parser.get_data("Type").expect("ParenType"),
+        "IntType" => ASTNode::Type(Type_::int_type(pos)),
+        "ShortType" => ASTNode::Type(Type_::short_type(pos)),
+        "CharType" => ASTNode::Type(Type_::char_type(pos)),
+        "RealType" => ASTNode::Type(Type_::int_type(pos)),
+        "BoolType" => ASTNode::Type(Type_::bool_type(pos)),
         "NameType" => ASTNode::Type(Type_::name_type(
             pos,
-            extract_string_data(pos, parser.get_data("type"), "type", name),
+            extract_string_data(pos, parser.get_data("ID"), "ID", name),
         )),
         "GenericsType" => ASTNode::Type(Type_::template_type(
             pos,
@@ -180,9 +198,9 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             match parser.get_data("Exp") {
                 Some(exp) => match exp {
                     ASTNode::Exp(e) => e,
-                    _ => Exp_::none_exp(pos),
+                    _ => ASTExp_::none_exp(pos),
                 },
-                None => Exp_::none_exp(pos),
+                None => ASTExp_::none_exp(pos),
             },
         )),
         "ContinueStm" => ASTNode::Stm(Stm_::continue_stm(pos)),
@@ -194,7 +212,7 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
         )),
         "UntilStm" => ASTNode::Stm(Stm_::while_stm(
             pos,
-            Exp_::unaryop_exp(
+            ASTExp_::unaryop_exp(
                 pos,
                 vec![Oper::Not],
                 extract_exp_data(pos, parser.get_data("Exp"), "Exp", name),
@@ -263,21 +281,17 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             pos,
             extract_stmlist_data(pos, parser.get_data("StmList"), "StmList", name),
         )),
-        "IntExp" => ASTNode::Exp(Exp_::int_exp(
+        "IntExp" => ASTNode::Exp(ASTExp_::int_exp(
             pos,
             extract_string_data(pos, parser.get_data("Integer"), "Integer", name),
         )),
-        "RealExp" => ASTNode::Exp(Exp_::real_exp(
+        "RealExp" => ASTNode::Exp(ASTExp_::real_exp(
             pos,
             extract_string_data(pos, parser.get_data("Real"), "Real", name),
         )),
-        "StringExp" => ASTNode::Exp(Exp_::string_exp(
+        "StringExp" => ASTNode::Exp(ASTExp_::string_exp(
             pos,
             extract_string_data(pos, parser.get_data("String"), "String", name),
-        )),
-        "IDExp" => ASTNode::Exp(Exp_::var_exp(
-            pos,
-            extract_string_data(pos, parser.get_data("ID"), "ID", name),
         )),
         "ConstantExp" | "PrimaryExp" => {
             let exp = parser.get_data("exp").expect("ConstantExp / PrimaryExp");
@@ -295,63 +309,50 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
                 None => ASTNode::ExpList(vec![exp.get_exp_data(pos, "exp", name)]),
             }
         }
-        "ParenExp" => ASTNode::Exp(Exp_::paren_exp(
+        "ParenExp" => ASTNode::Exp(ASTExp_::paren_exp(
             pos,
             extract_exp_data(pos, parser.get_data("exp"), "exp", name),
         )),
-        "SizeOfExp" => ASTNode::Exp(Exp_::sizeof_exp(
+        "SizeOfExp" => ASTNode::Exp(ASTExp_::sizeof_exp(
             pos,
             extract_exp_data(pos, parser.get_data("exp"), "exp", name),
         )),
-        "ArrayExp" => ASTNode::Exp(Exp_::array_exp(
+        "ArrayExp" => ASTNode::Exp(ASTExp_::array_exp(
             pos,
             extract_explist_data(pos, parser.get_data("ExpList"), "ExpList", name),
         )),
-        "FuncExp" => ASTNode::Exp(Exp_::func_exp(
+        "FuncExp" => ASTNode::Exp(ASTExp_::func_exp(
             pos,
             extract_fieldlist_data(pos, parser.get_data("params"), "params", name),
             extract_fieldlist_data(pos, parser.get_data("result"), "result", name),
             extract_stm_data(pos, parser.get_data("Stm"), "Stm", name),
         )),
-        "PostfixExp" => {
-            let new_exp = extract_exp_data(pos, parser.get_data("exp"), "exp", name);
-            let exp = match parser.get_data("suffix") {
-                Some(node) => match node {
-                    ASTNode::ExpSuffixList(suffix) => {
-                        ASTNode::Exp(Exp_::suffix_exp(pos, new_exp, suffix))
-                    }
-                    _ => ASTNode::Exp(new_exp),
-                },
-                None => ASTNode::Exp(new_exp),
-            };
-            match parser.get_data_from_parent_scope("exp") {
-                Some(node) => match node {
-                    ASTNode::ExpList(mut explist) => {
-                        explist.push(exp.get_exp_data(pos, "exp", name));
-                        ASTNode::ExpList(explist)
-                    }
-                    ASTNode::Exp(e) => {
-                        ASTNode::ExpList(vec![e, exp.get_exp_data(pos, "exp", name)])
-                    }
-                    _ => ASTNode::ExpList(vec![exp.get_exp_data(pos, "exp", name)]),
-                },
-                None => ASTNode::ExpList(vec![exp.get_exp_data(pos, "exp", name)]),
-            }
-        }
+        "VarExp" => ASTNode::Exp(ASTExp_::var_exp(
+            pos,
+            extract_var_data(pos, parser.get_data("Var"), "Var", name),
+        )),
         "CallSuffix" | "DotSuffix" | "ArrowSuffix" | "SubscriptSuffix" => {
             let data = if name == "CallSuffix" {
-                ExpSuffix_::call_suffix(
+                ASTExpSuffix_::call_suffix(
                     pos,
                     extract_explist_data(pos, parser.get_data("explist"), "explist", name),
                 )
             } else {
-                let data = extract_exp_data(pos, parser.get_data("exp"), "exp", name);
                 if name == "DotSuffix" {
-                    ExpSuffix_::dot_suffix(pos, data)
+                    ASTExpSuffix_::dot_suffix(
+                        pos,
+                        extract_string_data(pos, parser.get_data("ID"), "ID", name),
+                    )
                 } else if name == "ArrowSuffix" {
-                    ExpSuffix_::arrow_suffix(pos, data)
+                    ASTExpSuffix_::arrow_suffix(
+                        pos,
+                        extract_string_data(pos, parser.get_data("ID"), "ID", name),
+                    )
                 } else if name == "SubscriptSuffix" {
-                    ExpSuffix_::subscript_suffix(pos, data)
+                    ASTExpSuffix_::subscript_suffix(
+                        pos,
+                        extract_exp_data(pos, parser.get_data("exp"), "exp", name),
+                    )
                 } else {
                     panic!("suffix is not dot nor arrow nor subscript.");
                 }
@@ -405,13 +406,13 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
                 Some(node) => {
                     let oplist = node.get_operlist_data(pos, "op", name);
                     if name == "UnaryOpExp" {
-                        Exp_::unaryop_exp(
+                        ASTExp_::unaryop_exp(
                             pos,
                             oplist,
                             extract_exp_data(pos, parser.get_data("exp"), "exp", name),
                         )
                     } else {
-                        Exp_::binop_exp(
+                        ASTExp_::binop_exp(
                             pos,
                             oplist,
                             extract_explist_data(pos, parser.get_data("exp"), "exp", name),
@@ -540,7 +541,7 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
                     extract_exp_data(pos, parser.get_data("Exp"), "Exp", name),
                 ))
             } else {
-                ASTNode::Dec(Dec_::var_dec(pos, var, ty, Exp_::none_exp(pos)))
+                ASTNode::Dec(Dec_::var_dec(pos, var, ty, ASTExp_::none_exp(pos)))
             }
         }
         "VarDec" => parser.get_data("vardec").expect("VarDec"),

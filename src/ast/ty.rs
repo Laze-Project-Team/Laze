@@ -1,4 +1,4 @@
-use super::{exp::Exp, field};
+use super::{exp::ASTExp, field::FieldList};
 
 pub type TypeList = Vec<Box<Type_>>;
 pub type Type = Box<Type_>;
@@ -12,11 +12,16 @@ pub struct Type_ {
 #[derive(Clone, Debug)]
 pub enum TypeData {
     Void,
+    Int,
+    Short,
+    Char,
+    Bool,
+    Real,
     Name(String),
-    Array(Type, Exp),
+    Array(Type, ASTExp),
     Pointer(Type),
     Template(String, Vec<Type>),
-    Func(field::FieldList, Type),
+    Func(FieldList, Type),
     None,
 }
 
@@ -27,13 +32,43 @@ impl Type_ {
             data: TypeData::Void,
         })
     }
+    pub fn int_type(pos: (usize, usize)) -> Type {
+        Box::new(Type_ {
+            pos,
+            data: TypeData::Int,
+        })
+    }
+    pub fn short_type(pos: (usize, usize)) -> Type {
+        Box::new(Type_ {
+            pos,
+            data: TypeData::Short,
+        })
+    }
+    pub fn real_type(pos: (usize, usize)) -> Type {
+        Box::new(Type_ {
+            pos,
+            data: TypeData::Real,
+        })
+    }
+    pub fn char_type(pos: (usize, usize)) -> Type {
+        Box::new(Type_ {
+            pos,
+            data: TypeData::Char,
+        })
+    }
+    pub fn bool_type(pos: (usize, usize)) -> Type {
+        Box::new(Type_ {
+            pos,
+            data: TypeData::Bool,
+        })
+    }
     pub fn name_type(pos: (usize, usize), name: String) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Name(name),
         })
     }
-    pub fn array_type(pos: (usize, usize), ty: Type, size: Exp) -> Type {
+    pub fn array_type(pos: (usize, usize), ty: Type, size: ASTExp) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Array(ty, size),
@@ -51,7 +86,7 @@ impl Type_ {
             data: TypeData::Template(name, ty_params),
         })
     }
-    pub fn func_type(pos: (usize, usize), params: field::FieldList, result: Type) -> Type {
+    pub fn func_type(pos: (usize, usize), params: FieldList, result: Type) -> Type {
         Box::new(Type_ {
             pos,
             data: TypeData::Func(params, result),

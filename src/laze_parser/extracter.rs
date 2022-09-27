@@ -1,12 +1,12 @@
 use crate::ast::{
     ast::ASTNode,
     dec::{ClassMemberList, Dec, DecData, DecList, Dec_},
-    exp::{Exp, ExpData, ExpList, Exp_},
+    exp::{ASTExp, ASTExpData, ASTExpList, ASTExp_},
     field::{Field, FieldData, FieldList, Field_},
     ifelse::IfElseList,
     op::{Oper, OperList},
     stm::{Stm, StmData, StmList, Stm_},
-    suffix::ExpSuffixList,
+    suffix::ASTExpSuffixList,
     ty::{Type, TypeData, TypeList, Type_},
     var::{Var, VarData, Var_},
 };
@@ -25,7 +25,7 @@ pub fn extract_suffixlist_data(
     data: Option<ASTNode>,
     name: &str,
     rule: &str,
-) -> ExpSuffixList {
+) -> ASTExpSuffixList {
     match data {
         Some(data) => data.get_suffixlist_data(pos, name, rule),
         None => vec![],
@@ -119,12 +119,17 @@ pub fn extract_stmlist_data(
     }
 }
 
-pub fn extract_exp_data(pos: (usize, usize), data: Option<ASTNode>, name: &str, rule: &str) -> Exp {
+pub fn extract_exp_data(
+    pos: (usize, usize),
+    data: Option<ASTNode>,
+    name: &str,
+    rule: &str,
+) -> ASTExp {
     match data {
         Some(data) => data.get_exp_data(pos, name, rule),
-        None => Box::new(Exp_ {
+        None => Box::new(ASTExp_ {
             pos,
-            data: ExpData::None,
+            data: ASTExpData::None,
         }),
     }
 }
@@ -133,7 +138,7 @@ pub fn extract_explist_data(
     data: Option<ASTNode>,
     name: &str,
     rule: &str,
-) -> ExpList {
+) -> ASTExpList {
     match data {
         Some(data) => data.get_explist_data(pos, name, rule),
         None => vec![],

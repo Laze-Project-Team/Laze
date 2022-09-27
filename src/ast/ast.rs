@@ -7,12 +7,12 @@ use crate::laze_parser::matcher::extract_ast;
 
 use super::{
     dec::{self, ClassMemberList, Dec, DecData, DecList, Dec_},
-    exp::{Exp, ExpData, ExpList, Exp_},
+    exp::{ASTExp, ASTExpData, ASTExpList, ASTExp_},
     field::{Field, FieldData, FieldList, Field_},
     ifelse::{IfElse, IfElseList},
     op::{Oper, OperList},
     stm::{Stm, StmData, StmList, Stm_},
-    suffix::ExpSuffixList,
+    suffix::ASTExpSuffixList,
     ty::{Type, TypeData, TypeList, Type_},
     var::{Var, VarData, Var_},
 };
@@ -23,7 +23,7 @@ pub type AST = dec::DecList;
 pub enum ASTNode {
     Dec(Dec),
     Stm(Stm),
-    Exp(Exp),
+    Exp(ASTExp),
     Type(Type),
     Field(Field),
     String(String),
@@ -32,12 +32,12 @@ pub enum ASTNode {
     Op(Oper),
     DecList(DecList),
     StmList(StmList),
-    ExpList(ExpList),
+    ExpList(ASTExpList),
     FieldList(FieldList),
     TypeList(TypeList),
     StringList(Vec<String>),
     IfElseList(IfElseList),
-    ExpSuffixList(ExpSuffixList),
+    ExpSuffixList(ASTExpSuffixList),
     OperList(OperList),
     ClassMemberList(ClassMemberList),
     None,
@@ -127,13 +127,13 @@ impl ASTNode {
             vec![]
         }
     }
-    pub fn get_exp_data(self, pos: (usize, usize), name: &str, rule: &str) -> Exp {
+    pub fn get_exp_data(self, pos: (usize, usize), name: &str, rule: &str) -> ASTExp {
         match self {
             ASTNode::Exp(exp) => exp,
             ASTNode::ExpList(mut explist) => {
-                let mut temp_exp = Box::new(Exp_ {
+                let mut temp_exp = Box::new(ASTExp_ {
                     pos,
-                    data: ExpData::None,
+                    data: ASTExpData::None,
                 });
                 if explist.len() == 1 {
                     mem::swap(&mut explist[0], &mut temp_exp);
@@ -146,14 +146,14 @@ impl ASTNode {
             }
             _ => {
                 let _ = writeln!(stderr(), "{name} in {rule} is not an expression.");
-                return Box::new(Exp_ {
+                return Box::new(ASTExp_ {
                     pos,
-                    data: ExpData::None,
+                    data: ASTExpData::None,
                 });
             }
         }
     }
-    pub fn get_explist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> ExpList {
+    pub fn get_explist_data(self, _pos: (usize, usize), name: &str, rule: &str) -> ASTExpList {
         if let ASTNode::ExpList(explist) = self {
             explist
         } else {
@@ -243,7 +243,7 @@ impl ASTNode {
         _pos: (usize, usize),
         name: &str,
         rule: &str,
-    ) -> ExpSuffixList {
+    ) -> ASTExpSuffixList {
         if let ASTNode::ExpSuffixList(suffixlist) = self {
             suffixlist
         } else {

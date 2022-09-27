@@ -16,7 +16,7 @@ pub enum DecData {
     JsImport(String, field::FieldList, field::FieldList, String, String),
     JsExport(String, String),
 
-    Var(Var, ty::Type, exp::Exp),
+    Var(Var, ty::Type, exp::ASTExp),
     Class(String, ClassMemberList, Vec<String>),
     Template(Dec, Vec<String>),
     None,
@@ -66,7 +66,7 @@ impl Dec_ {
             data: DecData::JsExport(name, export_name),
         })
     }
-    pub fn var_dec(pos: (usize, usize), var: Var, ty: ty::Type, init: exp::Exp) -> Dec {
+    pub fn var_dec(pos: (usize, usize), var: Var, ty: ty::Type, init: exp::ASTExp) -> Dec {
         Box::new(Dec_ {
             pos,
             data: DecData::Var(var, ty, init),

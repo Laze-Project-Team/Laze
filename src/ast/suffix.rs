@@ -1,43 +1,43 @@
-use super::exp::{Exp, ExpList};
+use super::exp::{ASTExp, ASTExpList};
 
-pub type ExpSuffixList = Vec<ExpSuffix>;
-pub type ExpSuffix = Box<ExpSuffix_>;
+pub type ASTExpSuffixList = Vec<ASTExpSuffix>;
+pub type ASTExpSuffix = Box<ASTExpSuffix_>;
 
 #[derive(Clone, Debug)]
-pub struct ExpSuffix_ {
+pub struct ASTExpSuffix_ {
     pub pos: (usize, usize),
     pub data: SuffixData,
 }
 
 #[derive(Clone, Debug)]
 pub enum SuffixData {
-    Call(ExpList),
-    Dot(Exp),
-    Arrow(Exp),
-    Subscript(Exp),
+    Call(ASTExpList),
+    Dot(String),
+    Arrow(String),
+    Subscript(ASTExp),
 }
 
-impl ExpSuffix_ {
-    pub fn call_suffix(pos: (usize, usize), explist: ExpList) -> ExpSuffix {
-        Box::new(ExpSuffix_ {
+impl ASTExpSuffix_ {
+    pub fn call_suffix(pos: (usize, usize), explist: ASTExpList) -> ASTExpSuffix {
+        Box::new(ASTExpSuffix_ {
             pos,
             data: SuffixData::Call(explist),
         })
     }
-    pub fn dot_suffix(pos: (usize, usize), field: Exp) -> ExpSuffix {
-        Box::new(ExpSuffix_ {
+    pub fn dot_suffix(pos: (usize, usize), field: String) -> ASTExpSuffix {
+        Box::new(ASTExpSuffix_ {
             pos,
             data: SuffixData::Dot(field),
         })
     }
-    pub fn arrow_suffix(pos: (usize, usize), field: Exp) -> ExpSuffix {
-        Box::new(ExpSuffix_ {
+    pub fn arrow_suffix(pos: (usize, usize), field: String) -> ASTExpSuffix {
+        Box::new(ASTExpSuffix_ {
             pos,
             data: SuffixData::Arrow(field),
         })
     }
-    pub fn subscript_suffix(pos: (usize, usize), index: Exp) -> ExpSuffix {
-        Box::new(ExpSuffix_ {
+    pub fn subscript_suffix(pos: (usize, usize), index: ASTExp) -> ASTExpSuffix {
+        Box::new(ASTExpSuffix_ {
             pos,
             data: SuffixData::Subscript(index),
         })
