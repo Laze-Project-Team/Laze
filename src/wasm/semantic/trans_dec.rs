@@ -30,7 +30,7 @@ pub fn trans_dec(
     let mut _result_list: ModuleList = vec![];
     match &dec.data {
         DecData::Var(var, var_ty, init) => {
-            let (new_var, new_var_ty, object_explist) = trans_var_ty(var, var_ty);
+            let (new_var, new_var_ty, _object_explist) = trans_var_ty(var, var_ty);
             let var_lazetype = trans_ty(&new_var_ty, semantic_data);
             let new_var_access = semantic_data.frame.last_mut().unwrap().alloc(&var_lazetype);
             semantic_data.venv.add_data(
@@ -80,7 +80,7 @@ pub fn trans_dec(
             semantic_data.new_frame(&func_name, parent_class);
             let params_lazetype = trans_params(&params, semantic_data);
             let (_, return_lazetype) = trans_result(dec.pos, result, semantic_data);
-            let return_access = semantic_data
+            let _return_access = semantic_data
                 .frame
                 .last_mut()
                 .unwrap()
@@ -171,19 +171,17 @@ pub fn trans_dec(
                 }
             }
             let class_entry = semantic_data.tenv.get_mut_data(class_name);
-            if let Some(template_entry) = class_entry {
-                if let EnvEntry::Template(_, template_map, _, _) = template_entry {
-                    if let Some(parent_class_type) = parent_class {
-                        if let LazeTypeData::Template(_, type_params) = &parent_class_type.data {
-                            template_map.add_data(
-                                type_params.clone(),
-                                EnvEntry::Class(
-                                    class_name.clone(),
-                                    members_entrymap.clone(),
-                                    class_size,
-                                ),
-                            );
-                        }
+            if let Some(EnvEntry::Template(_, template_map, _, _)) = class_entry {
+                if let Some(parent_class_type) = parent_class {
+                    if let LazeTypeData::Template(_, type_params) = &parent_class_type.data {
+                        template_map.add_data(
+                            type_params.clone(),
+                            EnvEntry::Class(
+                                class_name.clone(),
+                                members_entrymap.clone(),
+                                class_size,
+                            ),
+                        );
                     }
                 }
             } else {
@@ -202,7 +200,7 @@ pub fn trans_dec(
                             trans_result(dec.pos, result, semantic_data);
                         let parent_class_type =
                             LazeType_::class_type(class_name.clone(), class_size);
-                        let new_frame =
+                        let _new_frame =
                             semantic_data.new_frame(func_name, Some(&parent_class_type));
                         let func_mod = trans_funcdec(
                             func_body,
@@ -218,7 +216,6 @@ pub fn trans_dec(
                     _ => {}
                 }
             }
-
             WasmExpTy::none()
         }
         DecData::Template(original_dec, type_params) => {

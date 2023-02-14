@@ -174,7 +174,7 @@ pub fn trans_result<'a>(
     };
     match return_field {
         FieldData::Field(var, ty) => {
-            let (new_var, new_var_ty, object_explist) = trans_var_ty(var, ty);
+            let (new_var, new_var_ty, _object_explist) = trans_var_ty(var, ty);
             (Some(new_var), trans_ty(&new_var_ty, semantic_data))
         }
         FieldData::None => (None, LazeType_::void_type()),
