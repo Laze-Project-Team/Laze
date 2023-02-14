@@ -1,4 +1,6 @@
 pub mod entry_map;
+pub mod laze_type;
+pub mod semantic_param;
 pub mod trans_ast;
 pub mod trans_dec;
 pub mod trans_exp;

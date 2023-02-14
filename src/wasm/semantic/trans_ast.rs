@@ -4,17 +4,22 @@ use crate::ast::ast::ASTNode;
 use crate::ast::dec::{DecData, DecList};
 use crate::wasm::il::module::ModuleList;
 
+use super::semantic_param::SemanticParam;
 use super::trans_dec::trans_dec;
 
 pub fn trans_ast(tree: ASTNode) -> ModuleList {
     match tree {
         ASTNode::DecList(declist) => {
             let new_list = sort_declist(declist);
-            let mut result_list: ModuleList = vec![];
+            let mut semantic_param = SemanticParam::new();
             for dec in new_list {
-                result_list.append(&mut trans_dec(dec));
+                trans_dec(&dec, None, &mut semantic_param).modulelist(
+                    format_args!("Failed to parse dec: {:?}", dec.pos)
+                        .as_str()
+                        .unwrap(),
+                );
             }
-            result_list
+            semantic_param.result_modlist
         }
         _ => {
             panic!("The parsed ASTNode is not a declist.");

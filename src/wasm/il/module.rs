@@ -17,9 +17,13 @@ pub enum Module_ {
     Elem(Exp, ModuleList),
     Table(i32),
     Type(WasmTypeList, WasmType),
+    None,
 }
 
 impl Module_ {
+    pub fn none_mod() -> Module {
+        Box::new(Module_::None)
+    }
     pub fn func_mod(
         index: i32,
         params: WasmTypeList,

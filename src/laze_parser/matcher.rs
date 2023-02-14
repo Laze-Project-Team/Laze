@@ -331,6 +331,9 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             pos,
             extract_var_data(pos, parser.get_data("Var"), "Var", name),
         )),
+        "BoolExp" => parser
+            .get_data("bool")
+            .expect("bool in BoolExp is not found"),
         "CallSuffix" | "DotSuffix" | "ArrowSuffix" | "SubscriptSuffix" => {
             let data = if name == "CallSuffix" {
                 ASTExpSuffix_::call_suffix(
@@ -387,6 +390,8 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
                 None => ASTNode::OperList(vec![string_to_oper(name)]),
             }
         }
+        "True" => ASTNode::Exp(ASTExp_::bool_exp(pos, true)),
+        "False" => ASTNode::Exp(ASTExp_::bool_exp(pos, false)),
         "Exp" => {
             let new_exp = extract_exp_data(pos, parser.get_data("exp"), "exp", name);
             match parser.get_data_from_parent_scope("exp") {
@@ -505,10 +510,7 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
             let result = extract_fieldlist_data(pos, parser.get_data("result"), "result", name);
 
             if name == "OperDec" || name == "FuncDec" {
-                let body = Stm_::compound_stm(
-                    pos,
-                    extract_stmlist_data(pos, parser.get_data("StmList"), "StmList", name),
-                );
+                let body = extract_stmlist_data(pos, parser.get_data("StmList"), "StmList", name);
                 if name == "OperDec" {
                     ASTNode::Dec(Dec_::oper_dec(pos, id, params, result, body))
                 } else {

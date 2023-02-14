@@ -1,3 +1,5 @@
+use std::io::{stderr, Write};
+
 use super::exp::{Exp, ExpList};
 
 pub type StmList = Vec<Stm>;
@@ -25,6 +27,20 @@ impl Stm_ {
     }
     pub fn if_stm(test: Exp, if_body: Stm, else_body: Stm) -> Stm {
         Box::new(Stm_::If(test, if_body, else_body))
+    }
+    pub fn set_if_else_body(&mut self, new_else_body: Stm, stm_pos: (usize, usize)) {
+        match self {
+            Stm_::If(_, _, else_body) => {
+                *else_body = new_else_body;
+            }
+            _ => {
+                let _ = writeln!(
+                    stderr(),
+                    "This statement is not an if statement: {:?}",
+                    stm_pos
+                );
+            }
+        }
     }
     pub fn block_stm(body: StmList) -> Stm {
         Box::new(Stm_::Block(body))

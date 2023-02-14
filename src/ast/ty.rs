@@ -92,4 +92,10 @@ impl Type_ {
             data: TypeData::Func(params, result),
         })
     }
+    pub fn none_type(pos: (usize, usize)) -> Type {
+        Box::new(Type_ {
+            pos,
+            data: TypeData::None,
+        })
+    }
 }

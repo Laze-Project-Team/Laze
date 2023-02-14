@@ -1,191 +1,227 @@
-use crate::{
-    ast::{
-        exp::ASTExpData,
-        field::FieldData,
-        ty::{Type, TypeData, TypeList},
-    },
-    wasm::il::util::{WasmType, WasmTypeList},
+use std::{
+    io::{stderr, Write},
+    mem::swap,
 };
 
-pub fn trans_ty(ty: Type) -> LazeType {
-    match ty.data {
+use crate::ast::{
+    exp::{ASTExpData, ASTExpList},
+    field::{FieldData, FieldList},
+    suffix::SuffixData,
+    ty::{Type, TypeData, TypeList, Type_},
+    var::{Var, VarData},
+};
+
+use super::{
+    entry_map::EnvEntry,
+    laze_type::{LazeType, LazeTypeList, LazeType_},
+    semantic_param::SemanticParam,
+    trans_dec::trans_dec,
+};
+
+pub fn trans_ty(ty: &Type, semantic_data: &mut SemanticParam) -> LazeType {
+    match &ty.data {
         TypeData::Void => LazeType_::void_type(),
         TypeData::Int => LazeType_::int_type(),
         TypeData::Bool => LazeType_::bool_type(),
         TypeData::Char => LazeType_::char_type(),
         TypeData::Real => LazeType_::real_type(),
         TypeData::Short => LazeType_::short_type(),
-        TypeData::Name(name) => LazeType_::class_type(name, 0),
+        TypeData::Name(name) => LazeType_::class_type(name.clone(), 0),
         TypeData::Array(ty, size) => {
-            let array_size = match size.data {
+            let array_size = match &size.data {
                 ASTExpData::Int(int) => int.parse::<i32>().unwrap(),
                 ASTExpData::Short(int) => int.parse::<i32>().unwrap(),
                 _ => {
-                    panic!("The size of this array is not a constant: {:?}", size.pos);
+                    let _ = writeln!(
+                        stderr(),
+                        "The size of this array is not a constant: {:?}",
+                        size.pos
+                    );
+                    0
                 }
             };
-            LazeType_::array_type(trans_ty(ty), array_size)
+            LazeType_::array_type(trans_ty(&ty, semantic_data), array_size)
         }
-        TypeData::Pointer(ty) => LazeType_::pointer_type(trans_ty(ty)),
+        TypeData::Pointer(ty) => LazeType_::pointer_type(trans_ty(&ty, semantic_data)),
         TypeData::Func(fieldlist, result) => {
             let mut param_types = vec![];
             for field in fieldlist {
-                if let FieldData::Field(_, ty) = field.data {
-                    param_types.push(trans_ty(ty));
+                if let FieldData::Field(_, ty) = &field.data {
+                    param_types.push(trans_ty(&ty, semantic_data));
                 }
             }
-            LazeType_::func_type(param_types, trans_ty(result), 0)
+            LazeType_::func_type(param_types, trans_ty(&result, semantic_data), 0)
         }
         TypeData::Template(name, type_params) => {
-            LazeType_::template_type(name, trans_tylist(type_params), 0)
+            let type_params_lazetype = trans_tylist(type_params.clone(), semantic_data);
+            let template_entry = semantic_data.tenv.get_data_clone(name);
+
+            if let Some(entry) = template_entry {
+                if let EnvEntry::Template(
+                    original_dec,
+                    template_map,
+                    mut template_venv,
+                    type_params_str,
+                ) = entry
+                {
+                    let specific_template = template_map.get_data(&type_params_lazetype);
+                    if let Some(template) = specific_template {
+                        if let EnvEntry::Class(_, _, class_size) = template {
+                            return LazeType_::template_type(
+                                name.clone(),
+                                type_params_lazetype,
+                                class_size.clone(),
+                            );
+                        }
+                    } else {
+                        if type_params.len() == type_params_str.len() {
+                            for (index, param) in type_params.iter().enumerate() {
+                                let poly_entry = EnvEntry::Poly(trans_ty(param, semantic_data));
+                                semantic_data
+                                    .tenv
+                                    .add_data(type_params_str[index].clone(), poly_entry);
+                            }
+                        } else if type_params.len() < type_params_str.len() {
+                            let _ = writeln!(
+                                stderr(),
+                                "Type parameter is missing: {:?}",
+                                type_params_str[type_params.len()]
+                            );
+                            return LazeType_::none_type();
+                        } else if type_params.len() > type_params_str.len() {
+                            let _ = writeln!(
+                                stderr(),
+                                "There are too many type parameters: {:?}",
+                                type_params[type_params_str.len()]
+                            );
+                            return LazeType_::none_type();
+                        }
+                        swap(&mut semantic_data.venv, &mut template_venv);
+                        let _ = trans_dec(&original_dec, None, semantic_data);
+                        swap(&mut semantic_data.venv, &mut template_venv);
+                        if type_params.len() == type_params_str.len() {
+                            for type_str in type_params_str.iter() {
+                                semantic_data.tenv.remove_data(type_str);
+                            }
+                        }
+                        let specific_template = template_map.get_data(&type_params_lazetype);
+                        if let Some(template) = specific_template {
+                            if let EnvEntry::Class(_, _, class_size) = template {
+                                return LazeType_::template_type(
+                                    name.clone(),
+                                    type_params_lazetype,
+                                    class_size.clone(),
+                                );
+                            }
+                        }
+                        return LazeType_::none_type();
+                    }
+                }
+            }
+            LazeType_::none_type()
         }
         TypeData::None => {
-            panic!("Type is not valid: {:?}", ty.pos);
+            let _ = writeln!(stderr(), "Type is not valid: {:?}", ty.pos);
+            LazeType_::none_type()
         }
     }
 }
 
-pub fn trans_tylist(list: TypeList) -> LazeTypeList {
+pub fn trans_tylist(list: TypeList, semantic_data: &mut SemanticParam) -> LazeTypeList {
     let mut result = vec![];
     for ty in list {
-        result.push(trans_ty(ty));
+        result.push(trans_ty(&ty, semantic_data));
     }
     result
 }
 
-pub type LazeTypeList = Vec<LazeType>;
-pub type LazeType = Box<LazeType_>;
-
-#[derive(Clone, PartialEq)]
-pub struct LazeType_ {
-    pub size: i32,
-    pub escape: bool,
-    pub data: LazeTypeData,
-}
-
-#[derive(Clone, PartialEq)]
-pub enum LazeTypeData {
-    Void,
-    Int,
-    Short,
-    Real,
-    Bool,
-    Char,
-    Class(String),
-    Template(String, LazeTypeList),
-    Array(LazeType, i32),
-    Pointer(LazeType),
-    Func(LazeTypeList, LazeType, i32),
-    None,
-}
-
-impl LazeType_ {
-    pub fn to_wasm_type(&self) -> WasmType {
-        match self.data {
-            LazeTypeData::Void => WasmType::None,
-            LazeTypeData::Int => WasmType::I64,
-            LazeTypeData::Bool => WasmType::I32,
-            LazeTypeData::Char => WasmType::I32,
-            LazeTypeData::Short => WasmType::I32,
-            LazeTypeData::Real => WasmType::F64,
-            LazeTypeData::Array(_, _) => WasmType::I32,
-            LazeTypeData::Class(_) => WasmType::I32,
-            LazeTypeData::Func(_, _, _) => WasmType::I32,
-            LazeTypeData::Pointer(_) => WasmType::I32,
-            LazeTypeData::Template(_, _) => WasmType::I32,
-            LazeTypeData::None => WasmType::None,
+pub fn trans_params(list: &FieldList, semantic_data: &mut SemanticParam) -> LazeTypeList {
+    let mut result = vec![];
+    for field in list {
+        match &field.data {
+            FieldData::Field(var, var_ty) => {
+                let (_, new_var_ty, _) = trans_var_ty(var, var_ty);
+                let new_var_lazetype = trans_ty(&new_var_ty, semantic_data);
+                semantic_data
+                    .frame
+                    .last_mut()
+                    .unwrap()
+                    .alloc_param(&new_var_lazetype);
+                result.push(new_var_lazetype);
+            }
+            FieldData::None => {}
         }
     }
-    pub fn list_to_wasm_type(list: LazeTypeList) -> WasmTypeList {
-        let mut result = vec![];
-        for ty in list {
-            result.push(ty.to_wasm_type());
-        }
-        result
-    }
+    result
+}
 
-    pub fn none_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 0,
-            escape: false,
-            data: LazeTypeData::None,
-        })
+pub fn trans_result<'a>(
+    pos: (usize, usize),
+    result_list: &'a FieldList,
+    semantic_data: &mut SemanticParam,
+) -> (Option<&'a Var>, LazeType) {
+    let return_field = if result_list.len() > 1 {
+        let _ = writeln!(
+            stderr(),
+            "Laze does not support multiple return values: {:?}",
+            pos
+        );
+        &result_list[0].data
+    } else if result_list.len() == 1 {
+        &result_list[0].data
+    } else {
+        &FieldData::None
+    };
+    match return_field {
+        FieldData::Field(var, ty) => {
+            let (new_var, new_var_ty, object_explist) = trans_var_ty(var, ty);
+            (Some(new_var), trans_ty(&new_var_ty, semantic_data))
+        }
+        FieldData::None => (None, LazeType_::void_type()),
     }
-    pub fn void_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 0,
-            escape: false,
-            data: LazeTypeData::Void,
-        })
-    }
-    pub fn int_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 8,
-            escape: false,
-            data: LazeTypeData::Int,
-        })
-    }
-    pub fn real_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 8,
-            escape: false,
-            data: LazeTypeData::Real,
-        })
-    }
-    pub fn char_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 4,
-            escape: false,
-            data: LazeTypeData::Char,
-        })
-    }
-    pub fn short_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 4,
-            escape: false,
-            data: LazeTypeData::Short,
-        })
-    }
-    pub fn bool_type() -> LazeType {
-        Box::new(LazeType_ {
-            size: 4,
-            escape: false,
-            data: LazeTypeData::Bool,
-        })
-    }
-    pub fn class_type(name: String, size: i32) -> LazeType {
-        Box::new(LazeType_ {
-            size,
-            escape: true,
-            data: LazeTypeData::Class(name),
-        })
-    }
-    pub fn array_type(ty: LazeType, size: i32) -> LazeType {
-        Box::new(LazeType_ {
-            size: ty.size * size,
-            escape: true,
-            data: LazeTypeData::Array(ty, size),
-        })
-    }
-    pub fn pointer_type(ty: LazeType) -> LazeType {
-        Box::new(LazeType_ {
-            size: 4,
-            escape: false,
-            data: LazeTypeData::Pointer(ty),
-        })
-    }
-    pub fn template_type(name: String, type_params: LazeTypeList, size: i32) -> LazeType {
-        Box::new(LazeType_ {
-            size,
-            escape: true,
-            data: LazeTypeData::Template(name, type_params),
-        })
-    }
-    pub fn func_type(params: LazeTypeList, result: LazeType, type_index: i32) -> LazeType {
-        Box::new(LazeType_ {
-            size: 4,
-            escape: false,
-            data: LazeTypeData::Func(params, result, type_index),
-        })
+}
+
+pub fn trans_var_ty<'a>(var: &'a Var, var_ty: &Type) -> (&'a Var, Type, Option<&'a ASTExpList>) {
+    let mut object_explist = None;
+    match &var.data {
+        VarData::Pointer(pointer_var) => (
+            pointer_var,
+            Type_::pointer_type(var_ty.pos, var_ty.clone()),
+            object_explist,
+        ),
+        VarData::SuffixVar(suffix_var, suffixlist) => {
+            let mut temp_var_ty = var_ty.clone();
+            if suffixlist.len() > 0 {
+                match &suffixlist[0].data {
+                    SuffixData::Subscript(index) => {
+                        temp_var_ty =
+                            Type_::array_type(temp_var_ty.pos, temp_var_ty, index.clone());
+                    }
+                    SuffixData::Call(args) => {
+                        object_explist = Some(args);
+                    }
+                    _ => {}
+                }
+            }
+            for suffix in suffixlist {
+                match &suffix.data {
+                    SuffixData::Subscript(index) => {
+                        let _ = writeln!(
+                            stderr(),
+                            "Warning: Avoid using N-Dimensional arrays: {:?}",
+                            var.pos
+                        );
+                        temp_var_ty =
+                            Type_::array_type(temp_var_ty.pos, temp_var_ty, index.clone());
+                    }
+                    SuffixData::Call(_) => {
+                        let _ = writeln!(stderr(), "Unknown declaration: {:?}", var.pos);
+                    }
+                    _ => {}
+                }
+            }
+            (suffix_var, temp_var_ty, object_explist)
+        }
+        _ => (var, var_ty.clone(), object_explist),
     }
 }

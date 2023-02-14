@@ -35,4 +35,10 @@ impl Var_ {
             data: VarData::Pointer(var),
         })
     }
+    pub fn none_var(pos: (usize, usize)) -> Var {
+        Box::new(Var_ {
+            pos,
+            data: VarData::None,
+        })
+    }
 }

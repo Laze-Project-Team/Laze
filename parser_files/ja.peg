@@ -28,7 +28,7 @@ SumExp = ProdExp::exp ((AddOp::op / SubOp::op) ProdExp::exp)*
 ProdExp = UnaryOpExp::exp ((MulOp::op / DivOp::op) UnaryOpExp::exp)*
 UnaryOpExp = (SubOp::op / DerefOp::op / AddressOp::op / NotOp::op)* PrimaryExp::exp
 PrimaryExp = ConstantExp::exp / VarExp::exp / ParenExp::exp / ArrayExp::exp / FuncExp::exp / SizeOfExp::exp
-ConstantExp = RealExp::exp / IntExp::exp / StringExp::exp
+ConstantExp = RealExp::exp / IntExp::exp / StringExp::exp / BoolExp::exp
 
 ArrayExp = "[" ExpList "]"
 ParenExp = "(" Exp::exp ")"
@@ -55,6 +55,7 @@ NotOp = "!"
 IntExp = Integer
 RealExp = Real
 StringExp = String
+BoolExp = True::bool / False::bool
 
 StmList = Stm*
 Stm = DecStm::stm / AssignStm::stm / CompoundStm::stm / IfStm::stm / WhileStm::stm / UntilStm::stm / RepeatStm::stm / BreakStm::stm / ContinueStm::stm / ReturnStm::stm / LoopStm::stm / ExpStm::stm
@@ -110,6 +111,8 @@ SubscriptSuffix = "[" Exp::exp "]"
 
 IDList = ID ("," ID)*
 ID = { [㐀-龯ぁ-んァ-ヶa-zA-Z_ー] [㐀-龯ぁ-んァ-ヶa-zA-Z0-9０-９_ー]* " "* : id }
-Integer = { [0-9]+ " "* : int }
+Integer = { ( "-" / "" ) [0-9]+ " "* : int }
 Real = { [0-9]+ "." [0-9]+ : real }
 String = { "\"" ( !"\"" . )* "\"" : string }
+True = "真"
+False = "偽"

@@ -4,6 +4,8 @@ use command_handler::handler::handle_args;
 
 use crate::wasm::semantic::trans_ast::trans_ast;
 
+// use crate::wasm::semantic::trans_ast::trans_ast;
+
 pub mod ast;
 pub mod command_handler;
 pub mod laze_parser;

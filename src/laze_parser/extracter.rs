@@ -10,7 +10,6 @@ use crate::ast::{
     ty::{Type, TypeData, TypeList, Type_},
     var::{Var, VarData, Var_},
 };
-
 pub fn extract_var_data(pos: (usize, usize), data: Option<ASTNode>, name: &str, rule: &str) -> Var {
     match data {
         Some(data) => data.get_var_data(pos, name, rule),

@@ -11,8 +11,8 @@ pub struct Dec_ {
 
 #[derive(Clone, Debug)]
 pub enum DecData {
-    Func(String, field::FieldList, field::FieldList, stm::Stm),
-    Oper(String, field::FieldList, field::FieldList, stm::Stm),
+    Func(String, field::FieldList, field::FieldList, stm::StmList),
+    Oper(String, field::FieldList, field::FieldList, stm::StmList),
     JsImport(String, field::FieldList, field::FieldList, String, String),
     JsExport(String, String),
 
@@ -28,7 +28,7 @@ impl Dec_ {
         name: String,
         params: field::FieldList,
         result: field::FieldList,
-        body: stm::Stm,
+        body: stm::StmList,
     ) -> Dec {
         Box::new(Dec_ {
             pos,
@@ -40,7 +40,7 @@ impl Dec_ {
         op: String,
         params: field::FieldList,
         result: field::FieldList,
-        body: stm::Stm,
+        body: stm::StmList,
     ) -> Dec {
         Box::new(Dec_ {
             pos,
