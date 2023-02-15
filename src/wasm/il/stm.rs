@@ -9,7 +9,7 @@ pub type Stm = Box<Stm_>;
 pub enum Stm_ {
     If(Exp, Stm, Stm),
     Block(StmList),
-    Loop(Exp, Stm, i32),
+    Loop(Exp, Stm, i32, bool),
     SetLocal(i32, Exp),
     SetGlobal(i32, Exp),
     Store(Exp, Exp),
@@ -45,8 +45,8 @@ impl Stm_ {
     pub fn block_stm(body: StmList) -> Stm {
         Box::new(Stm_::Block(body))
     }
-    pub fn loop_stm(test: Exp, body: Stm, index: i32) -> Stm {
-        Box::new(Stm_::Loop(test, body, index))
+    pub fn loop_stm(test: Exp, body: Stm, index: i32, is_for: bool) -> Stm {
+        Box::new(Stm_::Loop(test, body, index, is_for))
     }
     pub fn setlocal_stm(index: i32, exp: Exp) -> Stm {
         Box::new(Stm_::SetLocal(index, exp))

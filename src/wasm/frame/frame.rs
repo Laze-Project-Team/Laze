@@ -69,17 +69,20 @@ impl Frame_ {
         } else {
             match self.data {
                 FrameType::Func(_) => {
-                    new_access = FrameAccess::InLocal(self.locals.len() as i32);
+                    new_access =
+                        FrameAccess::InLocal((self.locals.len() + self.params.len()) as i32);
                     self.locals_type.push(ty.clone());
                     self.locals.push(new_access);
                 }
                 FrameType::Method(_, _) => {
-                    new_access = FrameAccess::InLocal(self.locals.len() as i32);
+                    new_access =
+                        FrameAccess::InLocal((self.locals.len() + self.params.len()) as i32);
                     self.locals_type.push(ty.clone());
                     self.locals.push(new_access);
                 }
                 FrameType::Global => {
-                    new_access = FrameAccess::InGlobal(self.locals.len() as i32);
+                    new_access =
+                        FrameAccess::InGlobal((self.locals.len() + self.params.len()) as i32);
                     self.locals.push(new_access);
                 }
                 FrameType::None => {
@@ -88,6 +91,11 @@ impl Frame_ {
                 }
             }
         }
+        new_access
+    }
+    pub fn alloc_inframe(&mut self, ty: &LazeType) -> FrameAccess {
+        let new_access = FrameAccess::InFrame(self.memory_offset, self.frame_size);
+        self.frame_size += ty.size;
         new_access
     }
 }

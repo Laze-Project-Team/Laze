@@ -13,11 +13,7 @@ pub fn trans_ast(tree: ASTNode) -> ModuleList {
             let new_list = sort_declist(declist);
             let mut semantic_param = SemanticParam::new();
             for dec in new_list {
-                trans_dec(&dec, None, &mut semantic_param).modulelist(
-                    format_args!("Failed to parse dec: {:?}", dec.pos)
-                        .as_str()
-                        .unwrap(),
-                );
+                trans_dec(&dec, None, &mut semantic_param);
             }
             semantic_param.result_modlist
         }

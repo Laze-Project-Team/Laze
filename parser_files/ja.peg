@@ -84,7 +84,7 @@ ElseIf = "でなければもし" "(" Exp ")" "ならば" Stm
 Else = "でなければ" Stm
 
 Type = PointerType::type / ArrayType::type
-PrimaryType = IntType::type / ShortType::type / RealType::type / CharType::type / BoolType::type / NameType::type / ParenType::type / GenericsType::type
+PrimaryType = ShortType::type / IntType::type / RealType::type / CharType::type / BoolType::type / NameType::type / ParenType::type / GenericsType::type
 
 PointerType = PrimaryType "*"
 ArrayType = PrimaryType ( "[" Exp::exp "]" )*

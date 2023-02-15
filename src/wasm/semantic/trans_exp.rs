@@ -38,7 +38,8 @@ pub fn trans_exp(exp: &ASTExp, semantic_data: &mut SemanticParam) -> WasmExpTy {
             let mut result_exp;
             let mut result_ty;
             if let Some(exp) = explist_iter.next() {
-                (result_ty, result_exp) = trans_exp(exp, semantic_data).ty_exp("");
+                (result_ty, result_exp) =
+                    trans_exp(exp, semantic_data).ty_exp(format_args!("{:?}", exp.pos).to_string());
             } else {
                 result_ty = LazeType_::none_type();
                 result_exp = Exp_::none_exp();
@@ -47,7 +48,7 @@ pub fn trans_exp(exp: &ASTExp, semantic_data: &mut SemanticParam) -> WasmExpTy {
                 if let Some(op) = operlist_iter.next() {
                     (result_ty, result_exp) =
                         trans_binop_exp(op, result_exp, result_ty, right_exp, semantic_data)
-                            .ty_exp("");
+                            .ty_exp(format_args!("{:?}", exp.pos).to_string());
                 }
             }
             WasmExpTy::new_exp(result_ty, result_exp)
@@ -67,60 +68,51 @@ pub fn trans_exp(exp: &ASTExp, semantic_data: &mut SemanticParam) -> WasmExpTy {
             // Function Expression needs to be supported
             WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
         }
-        ASTExpData::Int(i) => WasmExpTy::new_exp(
-            LazeType_::int_type(),
-            Exp_::consti64_exp(
-                i.parse().expect(
-                    format_args!("Parsing int failed: {:?}", exp.pos)
-                        .as_str()
-                        .unwrap(),
-                ),
-            ),
-        ),
+        ASTExpData::Int(i) => {
+            let int_data = i.parse::<i64>();
+            if let Ok(data) = int_data {
+                WasmExpTy::new_exp(LazeType_::int_type(), Exp_::consti64_exp(data))
+            } else {
+                WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+            }
+        }
         ASTExpData::Paren(exp) => trans_exp(exp, semantic_data),
-        ASTExpData::Real(r) => WasmExpTy::new_exp(
-            LazeType_::real_type(),
-            Exp_::constf64_exp(
-                r.parse().expect(
-                    format_args!("Parsing real number failed: {:?}", exp.pos)
-                        .as_str()
-                        .unwrap(),
-                ),
-            ),
-        ),
-        ASTExpData::Short(s) => WasmExpTy::new_exp(
-            LazeType_::short_type(),
-            Exp_::consti32_exp(
-                s.parse().expect(
-                    format_args!("Parsing short failed: {:?}", exp.pos)
-                        .as_str()
-                        .unwrap(),
-                ),
-            ),
-        ),
+        ASTExpData::Real(r) => {
+            let real_data = r.parse::<f64>();
+            if let Ok(data) = real_data {
+                WasmExpTy::new_exp(LazeType_::real_type(), Exp_::constf64_exp(data))
+            } else {
+                WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+            }
+        }
+        ASTExpData::Short(s) => {
+            let short_data = s.parse::<i32>();
+            if let Ok(data) = short_data {
+                WasmExpTy::new_exp(LazeType_::short_type(), Exp_::consti32_exp(data))
+            } else {
+                WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+            }
+        }
         ASTExpData::SizeOf(exp) => WasmExpTy::new_exp(
             LazeType_::short_type(),
             Exp_::consti32_exp(trans_exp(exp, semantic_data).ty.size),
         ),
         ASTExpData::String(exp) => {
             // using unwrap
-            let string_address = semantic_data.frame.last().unwrap().memory_offset
-                + semantic_data.frame.last().unwrap().frame_size;
+            let string_address = semantic_data.get_mem_size();
+            let string_type = LazeType_::array_type(LazeType_::char_type(), exp.len() as i32);
             for c in exp.chars() {
                 let access = semantic_data
                     .frame
                     .last_mut()
                     .unwrap()
-                    .alloc(&LazeType_::char_type());
+                    .alloc_inframe(&LazeType_::char_type());
                 semantic_data.temp_stmlist.push(Stm_::store_stm(
                     Exp_::consti32_exp(access.get_address()),
                     Exp_::consti32_exp(c as i32),
                 ));
             }
-            WasmExpTy::new_exp(
-                LazeType_::array_type(LazeType_::char_type(), exp.len() as i32),
-                Exp_::consti32_exp(string_address),
-            )
+            WasmExpTy::new_exp(string_type, Exp_::consti32_exp(string_address))
         }
         ASTExpData::UnaryOp(oper_list, calc_exp) => {
             if oper_list.len() > 1 {
@@ -160,7 +152,7 @@ pub fn trans_explist(
     let mut tylist_result = vec![];
 
     for exp in explist {
-        let (ty, exp) = trans_exp(exp, semantic_data).ty_exp("");
+        let (ty, exp) = trans_exp(exp, semantic_data).ty_exp("".to_string());
         tylist_result.push(ty);
         explist_result.push(exp);
     }
@@ -213,10 +205,10 @@ pub fn trans_arrayexp_to_stm(
                     .frame
                     .last_mut()
                     .unwrap()
-                    .alloc(&first_elem.ty);
+                    .alloc_inframe(&first_elem.ty);
                 init_stmlist.push(Stm_::store_stm(
                     Exp_::consti32_exp(access.get_address()),
-                    elem.exp(""),
+                    elem.exp("".to_string()),
                 ));
             }
         }
@@ -246,7 +238,7 @@ pub fn trans_binop_exp(
     right: &ASTExp,
     semantic_data: &mut SemanticParam,
 ) -> WasmExpTy {
-    let (right_ty, right_exp) = trans_exp(right, semantic_data).ty_exp("");
+    let (right_ty, right_exp) = trans_exp(right, semantic_data).ty_exp("".to_string());
     if let Some((ty, lhs, rhs)) = comp_type_binop(left_ty, left, right_ty, right_exp) {
         let wasm_type = ty.to_wasm_type();
         match oper {
@@ -289,7 +281,7 @@ pub fn trans_unaryop_exp(
         Oper::Deref => match &exp.data {
             ASTExpData::Var(var) => {
                 let (result_ty, result_exp) =
-                    trans_suffix_var_to_addr(&var, &vec![], semantic_data).ty_exp("");
+                    trans_suffix_var_to_addr(&var, &vec![], semantic_data).ty_exp("".to_string());
                 if let LazeTypeData::Pointer(pointer_ty) = result_ty.data {
                     let wasm_ty = pointer_ty.to_wasm_type();
                     WasmExpTy::new_exp(pointer_ty, Exp_::load_exp(wasm_ty, result_exp))
@@ -324,7 +316,7 @@ pub fn trans_unaryop_exp(
             }
         },
         Oper::Not => {
-            let (result_ty, result_exp) = trans_exp(exp, semantic_data).ty_exp("");
+            let (result_ty, result_exp) = trans_exp(exp, semantic_data).ty_exp("".to_string());
             if let LazeTypeData::Bool = result_ty.data {
                 WasmExpTy::new_exp(
                     LazeType_::bool_type(),

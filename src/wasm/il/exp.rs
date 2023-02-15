@@ -124,3 +124,14 @@ pub enum ConstData {
     F32(f32),
     F64(f64),
 }
+
+impl ConstData {
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::F32(data) => data.to_string(),
+            Self::F64(data) => data.to_string(),
+            Self::I32(data) => data.to_string(),
+            Self::I64(data) => data.to_string(),
+        }
+    }
+}

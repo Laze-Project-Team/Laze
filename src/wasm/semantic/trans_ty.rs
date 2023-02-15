@@ -142,11 +142,6 @@ pub fn trans_params(list: &FieldList, semantic_data: &mut SemanticParam) -> Laze
             FieldData::Field(var, var_ty) => {
                 let (_, new_var_ty, _) = trans_var_ty(var, var_ty);
                 let new_var_lazetype = trans_ty(&new_var_ty, semantic_data);
-                semantic_data
-                    .frame
-                    .last_mut()
-                    .unwrap()
-                    .alloc_param(&new_var_lazetype);
                 result.push(new_var_lazetype);
             }
             FieldData::None => {}

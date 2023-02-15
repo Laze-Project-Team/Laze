@@ -47,7 +47,7 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
         ASTStmData::IfElse(ifelselist) => {
             new_stm = trans_if_stm(ifelselist, semantic_data, stm.pos);
         }
-        ASTStmData::Exp(exp) => match trans_exp(exp, semantic_data).exp("").data {
+        ASTStmData::Exp(exp) => match trans_exp(exp, semantic_data).exp("".to_string()).data {
             ExpData::CallExp(index, label, args) => {
                 new_stm = Stm_::call_stm(index, args, label);
             }
@@ -61,9 +61,10 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
         ASTStmData::While(test_exp, while_body) => {
             semantic_data.loop_index += 1;
             new_stm = Stm_::loop_stm(
-                trans_exp(test_exp, semantic_data).exp(""),
+                trans_exp(test_exp, semantic_data).exp("".to_string()),
                 trans_stm(while_body, semantic_data),
                 semantic_data.loop_index,
+                false,
             );
         }
         ASTStmData::Continue => {
@@ -98,18 +99,17 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
             loop_body.push(trans_stm(for_body, semantic_data));
 
             stm_list.push(Stm_::loop_stm(
-                trans_exp(test_exp, semantic_data).exp(""),
+                trans_exp(test_exp, semantic_data).exp("".to_string()),
                 Stm_::block_stm(loop_body),
                 semantic_data.loop_index,
+                true,
             ));
             new_stm = Stm_::block_stm(stm_list);
         }
         ASTStmData::Dec(dec) => match &dec.data {
             DecData::Var(_, _, _) => {
                 new_stm = trans_dec(dec, None, semantic_data).stm(
-                    format_args!("Failed to analyze dec semantically: {:?}", dec.pos)
-                        .as_str()
-                        .unwrap(),
+                    format_args!("Failed to analyze dec semantically: {:?}", dec.pos).to_string(),
                 );
             }
             DecData::Func(..) => {
@@ -126,7 +126,7 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
             }
         },
         ASTStmData::Return(value) => {
-            new_stm = Stm_::return_stm(trans_exp(value, semantic_data).exp(""))
+            new_stm = Stm_::return_stm(trans_exp(value, semantic_data).exp("".to_string()))
         }
         ASTStmData::Repeat(limit, repeat_body) => {
             let init = ASTStm_::dec_stm(
@@ -158,9 +158,10 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
                 ],
             );
             stm_list.push(Stm_::loop_stm(
-                trans_exp(&test_exp, semantic_data).exp(""),
+                trans_exp(&test_exp, semantic_data).exp("".to_string()),
                 Stm_::block_stm(loop_body),
                 semantic_data.loop_index,
+                true,
             ));
             new_stm = Stm_::block_stm(stm_list);
         }
@@ -181,7 +182,7 @@ pub fn trans_if_stm(
     if ifelselist.len() > 0 {
         if let IfElseData::If(test_exp, if_body) = &ifelselist[0].data {
             result_stm = Stm_::if_stm(
-                trans_exp(&test_exp, semantic_data).exp(""),
+                trans_exp(&test_exp, semantic_data).exp("".to_string()),
                 trans_stm(&if_body, semantic_data),
                 Stm_::none_stm(),
             );
@@ -191,7 +192,7 @@ pub fn trans_if_stm(
                     IfElseData::ElseIf(test_exp, elseif_body) => {
                         result_stm.set_if_else_body(
                             Stm_::if_stm(
-                                trans_exp(&test_exp, semantic_data).exp(""),
+                                trans_exp(&test_exp, semantic_data).exp("".to_string()),
                                 trans_stm(&elseif_body, semantic_data),
                                 Stm_::none_stm(),
                             ),
@@ -242,22 +243,16 @@ pub fn trans_assign_stm(
     match &var.data {
         VarData::SuffixVar(var, suffixlist) => {
             new_stm = Stm_::store_stm(
-                trans_suffix_var_to_addr(var, suffixlist, semantic_data).exp(
-                    format_args!("Var does not have address: {:?}", var.pos)
-                        .as_str()
-                        .unwrap(),
-                ),
-                trans_exp(&added_init, semantic_data).exp(""),
+                trans_suffix_var_to_addr(var, suffixlist, semantic_data)
+                    .exp(format_args!("Var does not have address: {:?}", var.pos).to_string()),
+                trans_exp(&added_init, semantic_data).exp("".to_string()),
             );
         }
         VarData::Pointer(var) => {
             new_stm = Stm_::store_stm(
-                trans_right_var(var, semantic_data).exp(
-                    format_args!("Var does not have address: {:?}", var.pos)
-                        .as_str()
-                        .unwrap(),
-                ),
-                trans_exp(&added_init, semantic_data).exp(""),
+                trans_right_var(var, semantic_data)
+                    .exp(format_args!("Var does not have address: {:?}", var.pos).to_string()),
+                trans_exp(&added_init, semantic_data).exp("".to_string()),
             );
         }
         VarData::Simple(name) => {
@@ -265,12 +260,8 @@ pub fn trans_assign_stm(
             let var_type;
             let access;
             {
-                let var_entry = semantic_data.venv.get_data(name).expect(
-                    format_args!("Could not find variable {:?}: {:?}", name, var.pos)
-                        .as_str()
-                        .unwrap(),
-                );
-                (var_type, access) = if let EnvEntry::Var(ty, access) = var_entry {
+                let var_entry = semantic_data.venv.get_data(name);
+                (var_type, access) = if let Some(EnvEntry::Var(ty, access)) = var_entry {
                     (ty.clone(), access.clone())
                 } else {
                     (LazeType_::none_type(), FrameAccess::None)
@@ -281,13 +272,13 @@ pub fn trans_assign_stm(
                     FrameAccess::InLocal(index) => {
                         new_stm = Stm_::setlocal_stm(
                             index,
-                            trans_exp(&added_init, semantic_data).exp(""),
+                            trans_exp(&added_init, semantic_data).exp("".to_string()),
                         );
                     }
                     FrameAccess::InGlobal(index) => {
                         new_stm = Stm_::setglobal_stm(
                             index,
-                            trans_exp(&added_init, semantic_data).exp(""),
+                            trans_exp(&added_init, semantic_data).exp("".to_string()),
                         );
                     }
                     FrameAccess::InFrame(memory_offset, frame_offset)
@@ -295,7 +286,7 @@ pub fn trans_assign_stm(
                         if var_type.escape == false {
                             new_stm = Stm_::store_stm(
                                 Exp_::consti32_exp(memory_offset + frame_offset),
-                                trans_exp(&added_init, semantic_data).exp(""),
+                                trans_exp(&added_init, semantic_data).exp("".to_string()),
                             );
                         } else {
                             // match added_init.data {
@@ -305,7 +296,7 @@ pub fn trans_assign_stm(
                             // }
                             new_stm = Stm_::copy_stm(
                                 Exp_::consti32_exp(memory_offset + frame_offset),
-                                trans_exp(&added_init, semantic_data).exp(""),
+                                trans_exp(&added_init, semantic_data).exp("".to_string()),
                                 Exp_::consti32_exp(var_type.size),
                             );
                         }

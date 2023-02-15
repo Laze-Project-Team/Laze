@@ -7,7 +7,7 @@ use crate::{
         var::{Var, VarData},
     },
     wasm::il::{
-        exp::{Exp, ExpList, Exp_},
+        exp::{Exp, Exp_},
         util::{BinOper, WasmExpTy},
     },
 };
@@ -59,102 +59,115 @@ pub fn trans_suffix_var_to_addr(
     semantic_data: &mut SemanticParam,
 ) -> WasmExpTy {
     let name = &get_var_name(&var);
-    let var_entry = semantic_data.venv.get_data(name);
 
-    let (mut ty, mut result_exp) = match var_entry.expect(
-        format_args!("Could not find variable {:?}: {:?}", name, var.pos)
-            .as_str()
-            .unwrap(),
-    ) {
-        EnvEntry::Var(ty, access) => (ty.clone(), trans_access_to_exp(access, &var, name)),
-        // the function was declared with func: <ID> () => () {<body>}
-        // this function returns an address
-        EnvEntry::Func(index, _params, return_ty) => (
-            // check params type
-            return_ty.clone(),
-            Exp_::call_exp(
-                return_ty.to_wasm_type(),
-                *index,
-                get_args_from_suffixlist(suffixlist, semantic_data, var.pos),
-                None,
+    if let Some(var_entry) = semantic_data.venv.get_data(name) {
+        let (mut ty, mut result_exp) = match var_entry {
+            EnvEntry::Var(ty, access) => (ty.clone(), trans_access_to_exp(access, &var, name)),
+            // the function was declared with func: <ID> () => () {<body>}
+            // this function returns an address
+            EnvEntry::Func(index, params, return_ty) => (
+                // check params type
+                LazeType_::func_type(params.clone(), return_ty.clone(), -(index + 1)),
+                Exp_::none_exp(), // Exp_::call_exp(
+                                  //     return_ty.to_wasm_type(),
+                                  //     *index,
+                                  //     get_args_from_suffixlist(suffixlist, semantic_data, var.pos),
+                                  //     None,
+                                  // ),
             ),
-        ),
-        _ => {
-            let _ = writeln!(
-                stderr(),
-                "{} is not a variable nor a function: {:?}",
-                name,
-                var.pos
-            );
-            (LazeType_::none_type(), Exp_::none_exp())
-        }
-    };
-    for suffix in suffixlist {
-        match &suffix.data {
-            SuffixData::Subscript(index) => {
-                match &ty.data {
-                    LazeTypeData::Array(element_ty, _) => {
-                        ty = element_ty.clone();
-                    }
-                    LazeTypeData::Class(_class_name) => {
-                        // operator overloading for subscript
-                    }
-                    LazeTypeData::Template(_class_name, _type_param) => {
-                        // operator overloading for subscript
-                    }
-                    _ => {}
-                }
-                result_exp = Exp_::add_addr_exp(
-                    result_exp,
-                    Exp_::mul_addr_exp(
-                        Exp_::consti32_exp(ty.size),
-                        trans_exp(index, semantic_data).exp(""),
-                    ),
-                )
+            _ => {
+                let _ = writeln!(
+                    stderr(),
+                    "{} is not a variable nor a function: {:?}",
+                    name,
+                    var.pos
+                );
+                (LazeType_::none_type(), Exp_::none_exp())
             }
-            SuffixData::Dot(field) => {
-                (ty, result_exp) =
-                    trans_dot_var(field, &ty, result_exp, semantic_data, var.pos, name)
-            }
-            SuffixData::Call(explist) => {
-                // class methods will be function variables
-                if let LazeTypeData::Func(_typelist, return_type, type_index) = ty.data {
-                    // check param type
-                    ty = return_type.clone();
-                    result_exp = Exp_::call_indirect_exp(
-                        ty.to_wasm_type(),
+        };
+        for suffix in suffixlist {
+            match &suffix.data {
+                SuffixData::Subscript(index) => {
+                    match &ty.data {
+                        LazeTypeData::Array(element_ty, _) => {
+                            ty = element_ty.clone();
+                        }
+                        LazeTypeData::Class(_class_name) => {
+                            // operator overloading for subscript
+                        }
+                        LazeTypeData::Template(_class_name, _type_param) => {
+                            // operator overloading for subscript
+                        }
+                        _ => {}
+                    }
+                    result_exp = Exp_::add_addr_exp(
                         result_exp,
-                        type_index,
-                        trans_explist(explist, semantic_data).1,
-                    );
-                } else {
-                    let _ = writeln!(
-                        stderr(),
-                        "Cannot call {:?} because it is not a function: {:?}",
-                        name,
-                        var.pos
-                    );
+                        Exp_::mul_addr_exp(
+                            Exp_::consti32_exp(ty.size),
+                            trans_exp(index, semantic_data).exp("".to_string()),
+                        ),
+                    )
                 }
-            }
-            SuffixData::Arrow(field) => match ty.data {
-                LazeTypeData::Pointer(pointer_ty) => {
-                    ty = pointer_ty;
-                    result_exp = Exp_::load_exp(ty.to_wasm_type(), result_exp);
+                SuffixData::Dot(field) => {
                     (ty, result_exp) =
-                        trans_dot_var(field, &ty, result_exp, semantic_data, var.pos, name);
+                        trans_dot_var(field, &ty, result_exp, semantic_data, var.pos, name)
                 }
-                _ => {
-                    let _ = writeln!(
-                        stderr(),
-                        "To use the arrow operator, {:?} needs to be a pointer: {:?}",
-                        name,
-                        var.pos
-                    );
+                SuffixData::Call(explist) => {
+                    // class methods will be function variables
+                    if let LazeTypeData::Func(_typelist, return_type, type_index) = ty.data {
+                        // check param type
+                        ty = return_type.clone();
+                        if type_index < 0 {
+                            result_exp = Exp_::call_exp(
+                                ty.to_wasm_type(),
+                                -(type_index + 1),
+                                trans_explist(explist, semantic_data).1,
+                                None,
+                            )
+                        } else {
+                            result_exp = Exp_::call_indirect_exp(
+                                ty.to_wasm_type(),
+                                result_exp,
+                                type_index,
+                                trans_explist(explist, semantic_data).1,
+                            );
+                        }
+                    } else {
+                        let _ = writeln!(
+                            stderr(),
+                            "Cannot call {:?} because it is not a function: {:?}",
+                            name,
+                            var.pos
+                        );
+                    }
                 }
-            },
+                SuffixData::Arrow(field) => match ty.data {
+                    LazeTypeData::Pointer(pointer_ty) => {
+                        ty = pointer_ty;
+                        result_exp = Exp_::load_exp(ty.to_wasm_type(), result_exp);
+                        (ty, result_exp) =
+                            trans_dot_var(field, &ty, result_exp, semantic_data, var.pos, name);
+                    }
+                    _ => {
+                        let _ = writeln!(
+                            stderr(),
+                            "To use the arrow operator, {:?} needs to be a pointer: {:?}",
+                            name,
+                            var.pos
+                        );
+                    }
+                },
+            }
         }
+        WasmExpTy::new_exp(ty, result_exp)
+    } else {
+        let _ = writeln!(
+            stderr(),
+            "Could not find a variable or function named {:?}",
+            name
+        );
+        WasmExpTy::none()
     }
-    WasmExpTy::new_exp(ty, result_exp)
 }
 
 pub fn get_var_name(var: &Var) -> String {
@@ -166,38 +179,6 @@ pub fn get_var_name(var: &Var) -> String {
             let _ = writeln!(stderr(), "Variable does not exist: {:?}", var.pos);
             "".to_string()
         }
-    }
-}
-
-fn get_args_from_suffixlist(
-    suffixlist: &ASTExpSuffixList,
-    semantic_data: &mut SemanticParam,
-    var_pos: (usize, usize),
-) -> ExpList {
-    if suffixlist.len() > 0 {
-        match &suffixlist[0].data {
-            SuffixData::Call(_) => {}
-            _ => {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot get argument from the suffix list: {:?}",
-                    suffixlist[0].pos
-                );
-                return vec![];
-            }
-        }
-    } else {
-        let _ = writeln!(
-            stderr(),
-            "Suffix list does not exist for this suffix var: {:?}",
-            var_pos
-        );
-        return vec![];
-    }
-    if let SuffixData::Call(explist) = &suffixlist[0].data {
-        trans_explist(explist, semantic_data).1
-    } else {
-        vec![]
     }
 }
 
@@ -260,12 +241,8 @@ fn trans_dot_var(
 ) -> (LazeType, Exp) {
     match &ty.data {
         LazeTypeData::Class(name) => {
-            let class_entry = semantic_data.tenv.get_data(&name).expect(
-                format_args!("Could not find class {:?}: {:?}", name, var_pos)
-                    .as_str()
-                    .unwrap(),
-            );
-            if let EnvEntry::Class(_, members, _) = class_entry {
+            let class_entry = semantic_data.tenv.get_data(&name);
+            if let Some(EnvEntry::Class(_, members, _)) = class_entry {
                 get_member_of_class(&ty, result_exp, &members, &field, &name, var_pos)
             } else {
                 let _ = writeln!(stderr(), "{:?} is not a class: {:?}", name, var_pos);
@@ -273,18 +250,10 @@ fn trans_dot_var(
             }
         }
         LazeTypeData::Template(name, type_param) => {
-            let template_entry = semantic_data.tenv.get_data(&name).expect(
-                format_args!("Could not find template {:?}: {:?}", name, var_pos)
-                    .as_str()
-                    .unwrap(),
-            );
-            if let EnvEntry::Template(_, specific, _, _) = template_entry {
-                let class_entry = specific.get_data(type_param).expect(
-                    format_args!("Could not find specific template {:?}: {:?}", name, var_pos)
-                        .as_str()
-                        .unwrap(),
-                );
-                if let EnvEntry::Class(_, members, _) = class_entry {
+            let template_entry = semantic_data.tenv.get_data(&name);
+            if let Some(EnvEntry::Template(_, specific, _, _)) = template_entry {
+                let class_entry = specific.get_data(type_param);
+                if let Some(EnvEntry::Class(_, members, _)) = class_entry {
                     get_member_of_class(&ty, result_exp, members, &field, &name, var_pos)
                 } else {
                     let _ = writeln!(stderr(), "{:?} is not a class: {:?}", name, var_pos);

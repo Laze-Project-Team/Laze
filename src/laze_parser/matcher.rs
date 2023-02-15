@@ -129,7 +129,7 @@ pub fn extract_ast(pos: (usize, usize), name: &str, parser: &mut Parser<ASTNode>
         "IntType" => ASTNode::Type(Type_::int_type(pos)),
         "ShortType" => ASTNode::Type(Type_::short_type(pos)),
         "CharType" => ASTNode::Type(Type_::char_type(pos)),
-        "RealType" => ASTNode::Type(Type_::int_type(pos)),
+        "RealType" => ASTNode::Type(Type_::real_type(pos)),
         "BoolType" => ASTNode::Type(Type_::bool_type(pos)),
         "NameType" => ASTNode::Type(Type_::name_type(
             pos,

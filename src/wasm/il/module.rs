@@ -17,6 +17,7 @@ pub enum Module_ {
     Elem(Exp, ModuleList),
     Table(i32),
     Type(WasmTypeList, WasmType),
+    Memory(i32),
     None,
 }
 
@@ -53,5 +54,8 @@ impl Module_ {
     }
     pub fn type_mod(params: WasmTypeList, result: WasmType) -> Module {
         Box::new(Module_::Type(params, result))
+    }
+    pub fn mem_mod(page_size: i32) -> Module {
+        Box::new(Module_::Memory(page_size))
     }
 }

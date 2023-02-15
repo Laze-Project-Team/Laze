@@ -19,7 +19,7 @@ pub struct WasmExpTy {
 }
 
 impl WasmExpTy {
-    pub fn ty_exp(self, message: &str) -> (LazeType, Exp) {
+    pub fn ty_exp(self, message: String) -> (LazeType, Exp) {
         match self.data {
             WasmData::Exp(exp) => (self.ty, exp),
             _ => {
@@ -34,7 +34,7 @@ impl WasmExpTy {
             data: WasmData::None,
         }
     }
-    pub fn stm(self, message: &str) -> Stm {
+    pub fn stm(self, message: String) -> Stm {
         match self.data {
             WasmData::Stm(stm) => stm,
             _ => {
@@ -43,7 +43,7 @@ impl WasmExpTy {
             }
         }
     }
-    pub fn stmlist(self, message: &str) -> StmList {
+    pub fn stmlist(self, message: String) -> StmList {
         match self.data {
             WasmData::StmList(stmlist) => stmlist,
             _ => {
@@ -52,7 +52,7 @@ impl WasmExpTy {
             }
         }
     }
-    pub fn exp(self, message: &str) -> Exp {
+    pub fn exp(self, message: String) -> Exp {
         match self.data {
             WasmData::Exp(exp) => exp,
             _ => {
@@ -61,7 +61,7 @@ impl WasmExpTy {
             }
         }
     }
-    pub fn explist(self, message: &str) -> ExpList {
+    pub fn explist(self, message: String) -> ExpList {
         match self.data {
             WasmData::ExpList(explist) => explist,
             _ => {
@@ -70,7 +70,7 @@ impl WasmExpTy {
             }
         }
     }
-    pub fn module(self, message: &str) -> Module {
+    pub fn module(self, message: String) -> Module {
         match self.data {
             WasmData::Module(module) => module,
             _ => {
@@ -79,7 +79,7 @@ impl WasmExpTy {
             }
         }
     }
-    pub fn modulelist(self, message: &str) -> ModuleList {
+    pub fn modulelist(self, message: String) -> ModuleList {
         match self.data {
             WasmData::ModuleList(modulelist) => modulelist,
             _ => {
@@ -136,13 +136,25 @@ pub enum WasmData {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum WasmType {
     I32,
     I64,
     F32,
     F64,
     None,
+}
+
+impl WasmType {
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::F32 => "f32".to_string(),
+            Self::F64 => "f64".to_string(),
+            Self::I32 => "i32".to_string(),
+            Self::I64 => "i64".to_string(),
+            Self::None => "".to_string(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -168,6 +180,53 @@ pub enum BinOper {
     Or,
 
     None,
+}
+
+impl BinOper {
+    pub fn to_string(&self, ty: &WasmType) -> String {
+        match self {
+            Self::Add => "add".to_string(),
+            Self::Sub => "sub".to_string(),
+            Self::Mul => "mul".to_string(),
+            Self::DivSigned => match ty {
+                WasmType::I32 | WasmType::I64 => "div_s".to_string(),
+                WasmType::F32 | WasmType::F64 => "div".to_string(),
+                WasmType::None => "".to_string(),
+            },
+            Self::DivUnsigned => "div_u".to_string(),
+            Self::RemSigned => "rem_s".to_string(),
+            Self::RemUnsigned => "rem_u".to_string(),
+            Self::Eq => "eq".to_string(),
+            Self::Ne => "ne".to_string(),
+            Self::LtSigned => match ty {
+                WasmType::I32 | WasmType::I64 => "lt_s".to_string(),
+                WasmType::F32 | WasmType::F64 => "lt".to_string(),
+                WasmType::None => "".to_string(),
+            },
+            Self::LtUnsigned => "lt_u".to_string(),
+            Self::GtSigned => match ty {
+                WasmType::I32 | WasmType::I64 => "gt_s".to_string(),
+                WasmType::F32 | WasmType::F64 => "gt".to_string(),
+                WasmType::None => "".to_string(),
+            },
+            Self::GtUnsigned => "gt_u".to_string(),
+            Self::LeSigned => match ty {
+                WasmType::I32 | WasmType::I64 => "le_s".to_string(),
+                WasmType::F32 | WasmType::F64 => "le".to_string(),
+                WasmType::None => "".to_string(),
+            },
+            Self::LeUnsigned => "le_u".to_string(),
+            Self::GeSigned => match ty {
+                WasmType::I32 | WasmType::I64 => "ge_s".to_string(),
+                WasmType::F32 | WasmType::F64 => "ge".to_string(),
+                WasmType::None => "".to_string(),
+            },
+            Self::GeUnsigned => "ge_u".to_string(),
+            Self::And => "and".to_string(),
+            Self::Or => "or".to_string(),
+            Self::None => "".to_string(),
+        }
+    }
 }
 
 impl BinOper {
@@ -200,4 +259,18 @@ pub enum UniOper {
     Trunc,
     Nearest,
     Sqrt,
+}
+
+impl UniOper {
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::Abs => "abs".to_string(),
+            Self::Neg => "neg".to_string(),
+            Self::Ceil => "ceil".to_string(),
+            Self::Floor => "floor".to_string(),
+            Self::Trunc => "trunc".to_string(),
+            Self::Nearest => "nearest".to_string(),
+            Self::Sqrt => "sqrt".to_string(),
+        }
+    }
 }

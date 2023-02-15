@@ -42,7 +42,7 @@ impl ASTExp_ {
     pub fn int_exp(pos: (usize, usize), data: String) -> ASTExp {
         Box::new(ASTExp_ {
             pos,
-            data: ASTExpData::String(data),
+            data: ASTExpData::Int(data),
         })
     }
     pub fn real_exp(pos: (usize, usize), data: String) -> ASTExp {

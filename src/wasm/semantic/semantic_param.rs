@@ -31,7 +31,11 @@ impl SemanticParam {
         }
     }
     pub fn get_mem_size(&self) -> i32 {
-        self.frame.last().unwrap().memory_offset + self.frame.last().unwrap().frame_size
+        if self.frame.len() > 0 {
+            self.frame.last().unwrap().memory_offset + self.frame.last().unwrap().frame_size
+        } else {
+            0
+        }
     }
     pub fn new_frame(&mut self, func_name: &String, class: Option<&LazeType>) -> &mut Frame {
         let new_frame = match class {
