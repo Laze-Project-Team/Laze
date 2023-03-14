@@ -2,7 +2,10 @@ use crate::{
     ast::{
         dec::{Dec, DecData},
         exp::ASTExpData,
+        field::Field_,
         stm::{AssignType, StmList, Stm_},
+        ty::{Type, TypeData, Type_},
+        var::Var_,
     },
     wasm::il::{
         module::{ModuleList, Module_},
@@ -13,7 +16,7 @@ use crate::{
 
 use super::{
     entry_map::{EntryMap, EnvEntry, TemplateMap},
-    laze_type::{LazeType, LazeTypeData, LazeType_},
+    laze_type::LazeType_,
     semantic_param::SemanticParam,
     trans_funcdec::trans_funcdec,
     trans_stm::trans_stm,
@@ -23,7 +26,7 @@ use super::{
 
 pub fn trans_dec(
     dec: &Dec,
-    parent_class: Option<&LazeType>,
+    parent_class: Option<&Type>,
     semantic_data: &mut SemanticParam,
 ) -> WasmExpTy {
     let mut _result_list: ModuleList = vec![];
@@ -170,9 +173,12 @@ pub fn trans_dec(
                 }
             }
             let class_entry = semantic_data.tenv.get_mut_data(class_name);
+            let parent_class_type: Type;
             if let Some(EnvEntry::Template(_, template_map, _, _)) = class_entry {
-                if let Some(parent_class_type) = parent_class {
-                    if let LazeTypeData::Template(_, type_params) = &parent_class_type.data {
+                if let Some(class_type) = parent_class {
+                    if let TypeData::Template(_, type_params) = &class_type.data {
+                        parent_class_type =
+                            Type_::template_type(dec.pos, class_name.clone(), type_params.clone());
                         template_map.add_data(
                             type_params.clone(),
                             EnvEntry::Class(
@@ -181,29 +187,39 @@ pub fn trans_dec(
                                 class_size,
                             ),
                         );
+                    } else {
+                        return WasmExpTy::none();
                     }
+                } else {
+                    return WasmExpTy::none();
                 }
             } else {
+                parent_class_type = Type_::name_type(dec.pos, class_name.clone());
                 semantic_data.tenv.add_data(
                     class_name.clone(),
                     EnvEntry::Class(class_name.clone(), members_entrymap.clone(), class_size),
                 );
             }
+
             for member in member_list {
                 match &member.dec.data {
                     DecData::Func(func_name, params, result, func_body)
                     | DecData::Oper(func_name, params, result, func_body) => {
-                        let mut params_lazetype = trans_params(&params, semantic_data);
-                        params_lazetype.insert(0, LazeType_::pointer_type(LazeType_::void_type()));
-                        let (return_var, return_type) =
-                            trans_result(dec.pos, result, semantic_data);
-                        let parent_class_type =
-                            LazeType_::class_type(class_name.clone(), class_size);
                         let _new_frame =
                             semantic_data.new_frame(func_name, Some(&parent_class_type));
+                        let self_param = Field_::new(
+                            dec.pos,
+                            Var_::simple_var(dec.pos, "self".to_string()),
+                            Type_::pointer_type(dec.pos, parent_class_type.clone()),
+                        );
+                        let mut params_with_self = vec![self_param];
+                        params_with_self.append(&mut params.clone());
+                        let params_lazetype = trans_params(&params_with_self, semantic_data);
+                        let (return_var, return_type) =
+                            trans_result(dec.pos, result, semantic_data);
                         let func_mod = trans_funcdec(
                             func_body,
-                            params,
+                            &params_with_self,
                             &params_lazetype,
                             return_var,
                             &return_type,

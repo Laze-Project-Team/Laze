@@ -64,12 +64,13 @@ pub fn trans_ty(ty: &Type, semantic_data: &mut SemanticParam) -> LazeType {
                     type_params_str,
                 ) = entry
                 {
-                    let specific_template = template_map.get_data(&type_params_lazetype);
+                    let specific_template = template_map.get_data(&type_params);
                     if let Some(template) = specific_template {
                         if let EnvEntry::Class(_, _, class_size) = template {
                             return LazeType_::template_type(
                                 name.clone(),
                                 type_params_lazetype,
+                                type_params.clone(),
                                 class_size.clone(),
                             );
                         }
@@ -97,19 +98,20 @@ pub fn trans_ty(ty: &Type, semantic_data: &mut SemanticParam) -> LazeType {
                             return LazeType_::none_type();
                         }
                         swap(&mut semantic_data.venv, &mut template_venv);
-                        let _ = trans_dec(&original_dec, None, semantic_data);
+                        let _ = trans_dec(&original_dec, Some(&ty), semantic_data);
                         swap(&mut semantic_data.venv, &mut template_venv);
                         if type_params.len() == type_params_str.len() {
                             for type_str in type_params_str.iter() {
                                 semantic_data.tenv.remove_data(type_str);
                             }
                         }
-                        let specific_template = template_map.get_data(&type_params_lazetype);
+                        let specific_template = template_map.get_data(&type_params);
                         if let Some(template) = specific_template {
                             if let EnvEntry::Class(_, _, class_size) = template {
                                 return LazeType_::template_type(
                                     name.clone(),
                                     type_params_lazetype,
+                                    type_params.clone(),
                                     class_size.clone(),
                                 );
                             }

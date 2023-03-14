@@ -3,13 +3,13 @@ use super::{field, op, stm, suffix::ASTExpSuffixList, var::Var};
 pub type ASTExp = Box<ASTExp_>;
 pub type ASTExpList = Vec<ASTExp>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ASTExp_ {
     pub pos: (usize, usize),
     pub data: ASTExpData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ASTExpData {
     Int(String),
     Short(String),

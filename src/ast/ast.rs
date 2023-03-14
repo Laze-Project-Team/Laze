@@ -19,7 +19,7 @@ use super::{
 
 pub type AST = dec::DecList;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ASTNode {
     Dec(Dec),
     Stm(Stm),

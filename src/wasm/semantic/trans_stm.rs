@@ -1,4 +1,7 @@
-use std::io::{stderr, Write};
+use std::{
+    io::{stderr, Write},
+    mem::replace,
+};
 
 use crate::{
     ast::{
@@ -28,7 +31,7 @@ use super::{
     semantic_param::SemanticParam,
     trans_dec::trans_dec,
     trans_exp::trans_exp,
-    trans_var::{trans_right_var, trans_suffix_var_to_addr},
+    trans_var::{check_member, trans_right_var, trans_suffix_var_to_addr},
 };
 
 pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
@@ -169,7 +172,13 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
             new_stm = Stm_::none_stm();
         }
     }
-    new_stm
+    if semantic_data.temp_stmlist.len() > 0 {
+        let mut block = replace(&mut semantic_data.temp_stmlist, vec![]);
+        block.push(new_stm);
+        Stm_::block_stm(block)
+    } else {
+        new_stm
+    }
 }
 
 pub fn trans_if_stm(
@@ -256,7 +265,7 @@ pub fn trans_assign_stm(
             );
         }
         VarData::Simple(name) => {
-            // this needs to be fixed to not use clone
+            // TODO: Dont' use clone
             let var_type;
             let access;
             {
@@ -307,8 +316,18 @@ pub fn trans_assign_stm(
                     }
                 }
             } else {
-                let _ = writeln!(stderr(), "{:?} is not a variable: {:?}", name, var.pos);
-                new_stm = Stm_::none_stm();
+                let checked_var = check_member(var, semantic_data);
+                if let Some(checked_var_exists) = checked_var {
+                    return trans_assign_stm(
+                        &checked_var_exists,
+                        &added_init,
+                        &AssignType::Normal,
+                        semantic_data,
+                    );
+                } else {
+                    let _ = writeln!(stderr(), "{:?} is not a variable: {:?}", name, var.pos);
+                    new_stm = Stm_::none_stm();
+                }
             }
         }
         _ => {

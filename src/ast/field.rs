@@ -3,13 +3,13 @@ use super::{ty, var::Var};
 pub type Field = Box<Field_>;
 pub type FieldList = Vec<Field>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Field_ {
     pub pos: (usize, usize),
     pub data: FieldData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FieldData {
     Field(Var, ty::Type),
     None,

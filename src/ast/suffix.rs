@@ -3,13 +3,13 @@ use super::exp::{ASTExp, ASTExpList};
 pub type ASTExpSuffixList = Vec<ASTExpSuffix>;
 pub type ASTExpSuffix = Box<ASTExpSuffix_>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ASTExpSuffix_ {
     pub pos: (usize, usize),
     pub data: SuffixData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SuffixData {
     Call(ASTExpList),
     Dot(String),

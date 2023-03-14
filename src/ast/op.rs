@@ -1,6 +1,6 @@
 pub type OperList = Vec<Oper>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Oper {
     Plus,
     Minus,

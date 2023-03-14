@@ -1,10 +1,10 @@
 use std::io::{stderr, Write};
 
-use crate::wasm::semantic::laze_type::LazeType;
+use crate::{ast::ty::Type, wasm::semantic::laze_type::LazeType};
 
 pub type Frame = Box<Frame_>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Frame_ {
     pub data: FrameType,
     pub locals: Vec<FrameAccess>,
@@ -16,10 +16,10 @@ pub struct Frame_ {
     pub frame_size: i32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FrameType {
     Func(String),
-    Method(String, String),
+    Method(String, Type),
     Global,
     None,
 }

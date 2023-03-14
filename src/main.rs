@@ -2,7 +2,7 @@ use std::{env, path::Path, time::Instant};
 
 use command_handler::handler::handle_args;
 
-use crate::wasm::semantic::trans_ast::trans_ast;
+use crate::wasm::{print_tree::print_module::fwrite_tree, semantic::trans_ast::trans_ast};
 
 // use crate::wasm::semantic::trans_ast::trans_ast;
 
@@ -19,7 +19,9 @@ fn main() {
     let ast = info.parser.parse(Path::new(&info.program_file_path));
     println!("{}ms", start.elapsed().as_millis());
     println!("{:?}", ast);
-    let module_list = trans_ast(ast);
+    let (module_list, mem_size) = trans_ast(ast);
     println!("{}ms", start.elapsed().as_millis());
     println!("{:?}", module_list);
+    fwrite_tree(&module_list, mem_size, &Path::new(&info.program_file_path));
+    println!("{}ms", start.elapsed().as_millis());
 }

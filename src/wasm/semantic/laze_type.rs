@@ -1,8 +1,11 @@
 use std::io::{stderr, Write};
 
-use crate::wasm::il::{
-    exp::{Exp, Exp_},
-    util::{WasmType, WasmTypeList},
+use crate::{
+    ast::ty::TypeList,
+    wasm::il::{
+        exp::{Exp, Exp_},
+        util::{WasmType, WasmTypeList},
+    },
 };
 
 pub type LazeTypeList = Vec<LazeType>;
@@ -24,7 +27,7 @@ pub enum LazeTypeData {
     Bool,
     Char,
     Class(String),
-    Template(String, LazeTypeList),
+    Template(String, LazeTypeList, TypeList),
     Array(LazeType, i32),
     Pointer(LazeType),
     Func(LazeTypeList, LazeType, i32),
@@ -44,7 +47,7 @@ impl LazeType_ {
             LazeTypeData::Class(_) => WasmType::I32,
             LazeTypeData::Func(_, _, _) => WasmType::I32,
             LazeTypeData::Pointer(_) => WasmType::I32,
-            LazeTypeData::Template(_, _) => WasmType::I32,
+            LazeTypeData::Template(_, _, _) => WasmType::I32,
             LazeTypeData::None => WasmType::None,
         }
     }
@@ -126,11 +129,16 @@ impl LazeType_ {
             data: LazeTypeData::Pointer(ty),
         })
     }
-    pub fn template_type(name: String, type_params: LazeTypeList, size: i32) -> LazeType {
+    pub fn template_type(
+        name: String,
+        lazetype_params: LazeTypeList,
+        type_params: TypeList,
+        size: i32,
+    ) -> LazeType {
         Box::new(LazeType_ {
             size,
             escape: true,
-            data: LazeTypeData::Template(name, type_params),
+            data: LazeTypeData::Template(name, lazetype_params, type_params),
         })
     }
     pub fn func_type(params: LazeTypeList, result: LazeType, type_index: i32) -> LazeType {

@@ -3,13 +3,13 @@ use super::{exp, field, stm, ty, var::Var};
 pub type Dec = Box<Dec_>;
 pub type DecList = Vec<Dec>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Dec_ {
     pub pos: (usize, usize),
     pub data: DecData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DecData {
     Func(String, field::FieldList, field::FieldList, stm::StmList),
     Oper(String, field::FieldList, field::FieldList, stm::StmList),
@@ -91,13 +91,13 @@ impl Dec_ {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MemberSpecifier {
     Public,
     Private,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ClassMember_ {
     pub specifier: MemberSpecifier,
     pub dec: Dec,

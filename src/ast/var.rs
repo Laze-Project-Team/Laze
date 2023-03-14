@@ -2,13 +2,13 @@ use super::suffix::ASTExpSuffixList;
 
 pub type Var = Box<Var_>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Var_ {
     pub pos: (usize, usize),
     pub data: VarData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum VarData {
     Simple(String),
     SuffixVar(Var, ASTExpSuffixList),

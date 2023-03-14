@@ -9,13 +9,13 @@ pub type StmList = Vec<Stm>;
 
 pub type Stm = Box<Stm_>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Stm_ {
     pub pos: (usize, usize),
     pub data: StmData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AssignType {
     Normal,
     Add,
@@ -24,7 +24,7 @@ pub enum AssignType {
     Div,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum StmData {
     Compound(StmList),
     Assign(Var, exp::ASTExp, AssignType),

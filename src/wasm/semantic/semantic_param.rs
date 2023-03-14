@@ -1,12 +1,12 @@
-use crate::wasm::{
-    frame::frame::{Frame, FrameType, Frame_},
-    il::{module::ModuleList, stm::StmList},
+use crate::{
+    ast::ty::{Type, TypeData},
+    wasm::{
+        frame::frame::{Frame, FrameType, Frame_},
+        il::{module::ModuleList, stm::StmList},
+    },
 };
 
-use super::{
-    entry_map::EntryMap,
-    laze_type::{LazeType, LazeTypeData},
-};
+use super::entry_map::EntryMap;
 
 pub struct SemanticParam {
     pub venv: EntryMap,
@@ -37,12 +37,12 @@ impl SemanticParam {
             0
         }
     }
-    pub fn new_frame(&mut self, func_name: &String, class: Option<&LazeType>) -> &mut Frame {
+    pub fn new_frame(&mut self, func_name: &String, class: Option<&Type>) -> &mut Frame {
         let new_frame = match class {
             Some(ty) => match &ty.data {
-                LazeTypeData::Class(name) | LazeTypeData::Template(name, _) => Frame_::new(
+                TypeData::Name(_) | TypeData::Template(_, _) => Frame_::new(
                     self.get_mem_size(),
-                    FrameType::Method(func_name.clone(), name.clone()),
+                    FrameType::Method(func_name.clone(), ty.clone()),
                 ),
                 _ => Frame_::new(self.get_mem_size(), FrameType::Func(func_name.clone())),
             },
@@ -50,5 +50,8 @@ impl SemanticParam {
         };
         self.frame.push(new_frame);
         self.frame.last_mut().unwrap()
+    }
+    pub fn current_frame(&self) -> Option<&Frame> {
+        self.frame.last()
     }
 }

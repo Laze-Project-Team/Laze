@@ -1,11 +1,14 @@
 use crate::{
-    ast::dec::{Dec, MemberSpecifier},
+    ast::{
+        dec::{Dec, MemberSpecifier},
+        ty::TypeList,
+    },
     wasm::frame::frame::FrameAccess,
 };
 
 use super::laze_type::{LazeType, LazeTypeList};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct EntryMap {
     data: Vec<(String, EnvEntry)>,
 }
@@ -71,7 +74,7 @@ impl EntryMap {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EnvEntry {
     // var_type: LazeType, var_access: FrameAccess
     Var(LazeType, FrameAccess),
@@ -90,16 +93,16 @@ pub enum EnvEntry {
     None,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TemplateMap {
-    map: Vec<(LazeTypeList, EnvEntry)>,
+    map: Vec<(TypeList, EnvEntry)>,
 }
 
 impl TemplateMap {
     pub fn new() -> TemplateMap {
         TemplateMap { map: vec![] }
     }
-    pub fn get_data<'a>(&'a self, type_param: &LazeTypeList) -> Option<&'a EnvEntry> {
+    pub fn get_data<'a>(&'a self, type_param: &TypeList) -> Option<&'a EnvEntry> {
         for data in &self.map {
             if type_param == &data.0 {
                 return Some(&data.1);
@@ -107,14 +110,10 @@ impl TemplateMap {
         }
         None
     }
-    pub fn add_data(&mut self, type_param: LazeTypeList, entry: EnvEntry) {
+    pub fn add_data(&mut self, type_param: TypeList, entry: EnvEntry) {
         self.map.push((type_param, entry));
     }
-    pub fn add_data_return_mut(
-        &mut self,
-        type_param: LazeTypeList,
-        entry: EnvEntry,
-    ) -> &mut EnvEntry {
+    pub fn add_data_return_mut(&mut self, type_param: TypeList, entry: EnvEntry) -> &mut EnvEntry {
         self.map.push((type_param, entry));
         &mut self.map.last_mut().unwrap().1
     }

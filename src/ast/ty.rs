@@ -3,13 +3,13 @@ use super::{exp::ASTExp, field::FieldList};
 pub type TypeList = Vec<Box<Type_>>;
 pub type Type = Box<Type_>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Type_ {
     pub pos: (usize, usize),
     pub data: TypeData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TypeData {
     Void,
     Int,

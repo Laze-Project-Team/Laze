@@ -3,12 +3,16 @@ use std::io::{stderr, Write};
 use crate::{
     ast::{
         dec::MemberSpecifier,
-        suffix::{ASTExpSuffixList, SuffixData},
-        var::{Var, VarData},
+        suffix::{ASTExpSuffixList, ASTExpSuffix_, SuffixData},
+        ty::TypeData,
+        var::{Var, VarData, Var_},
     },
-    wasm::il::{
-        exp::{Exp, Exp_},
-        util::{BinOper, WasmExpTy},
+    wasm::{
+        frame::frame::FrameType,
+        il::{
+            exp::{Exp, Exp_},
+            util::{BinOper, WasmExpTy},
+        },
     },
 };
 
@@ -31,17 +35,27 @@ pub fn trans_right_var(var: &Var, semantic_data: &mut SemanticParam) -> WasmExpT
                 if let EnvEntry::Var(ty, access) = entry {
                     WasmExpTy::new_exp(ty.clone(), trans_access_to_exp(access, var, name))
                 } else {
-                    let _ = writeln!(stderr(), "{:?} is not a variable: {:?}", name, var.pos);
-                    WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+                    let checked_var = check_member(var, semantic_data);
+                    if let Some(checked_var_exists) = checked_var {
+                        return trans_right_var(&checked_var_exists, semantic_data);
+                    } else {
+                        let _ = writeln!(stderr(), "{:?} is not a variable: {:?}", name, var.pos);
+                        WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+                    }
                 }
             } else {
-                let _ = writeln!(
-                    stderr(),
-                    "Could not find variable {:?}: {:?}",
-                    name,
-                    var.pos
-                );
-                WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+                let checked_var = check_member(var, semantic_data);
+                if let Some(checked_var_exists) = checked_var {
+                    return trans_right_var(&checked_var_exists, semantic_data);
+                } else {
+                    let _ = writeln!(
+                        stderr(),
+                        "Could not find variable {:?}: {:?}",
+                        name,
+                        var.pos
+                    );
+                    WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
+                }
             }
         }
         VarData::None => {
@@ -95,7 +109,7 @@ pub fn trans_suffix_var_to_addr(
                         LazeTypeData::Class(_class_name) => {
                             // operator overloading for subscript
                         }
-                        LazeTypeData::Template(_class_name, _type_param) => {
+                        LazeTypeData::Template(_class_name, _type_param, _) => {
                             // operator overloading for subscript
                         }
                         _ => {}
@@ -161,12 +175,135 @@ pub fn trans_suffix_var_to_addr(
         }
         WasmExpTy::new_exp(ty, result_exp)
     } else {
-        let _ = writeln!(
-            stderr(),
-            "Could not find a variable or function named {:?}",
-            name
-        );
-        WasmExpTy::none()
+        let checked_var = check_member(var, semantic_data);
+        if let Some(checked_var_exists) = checked_var {
+            return trans_suffix_var_to_addr(&checked_var_exists, suffixlist, semantic_data);
+        } else {
+            let _ = writeln!(
+                stderr(),
+                "Could not find a variable or function named {:?}",
+                name
+            );
+            WasmExpTy::none()
+        }
+    }
+}
+
+// TODO: Make cleaner / fix bugs(haven't found them yet)
+pub fn check_member<'a>(var: &'a Var, semantic_data: &mut SemanticParam) -> Option<Var> {
+    let var_name = get_var_name(var);
+    let frame = semantic_data.current_frame();
+    if let Some(frame_exists) = frame {
+        if let FrameType::Method(name, parent_class) = &frame_exists.data {
+            let members_map = match &parent_class.data {
+                TypeData::Name(class) => {
+                    if let Some(EnvEntry::Class(_, members_map, _)) =
+                        semantic_data.tenv.get_data(class)
+                    {
+                        members_map
+                    } else {
+                        return None;
+                    }
+                }
+                TypeData::Template(template_name, type_param) => {
+                    if let Some(EnvEntry::Template(_, template_map, _, _)) =
+                        semantic_data.tenv.get_data(template_name)
+                    {
+                        if let Some(EnvEntry::Class(_, members_map, _)) =
+                            template_map.get_data(type_param)
+                        {
+                            members_map
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        return None;
+                    }
+                }
+                _ => {
+                    return None;
+                }
+            };
+            if let Some(member_entry) = members_map.get_data(&var_name) {
+                match member_entry {
+                    EnvEntry::Member(specifier, _, _) | EnvEntry::Method(specifier, _, _, _) => {
+                        if let MemberSpecifier::Private = specifier {
+                            return None;
+                        }
+                    }
+                    _ => {
+                        return None;
+                    }
+                }
+            } else {
+                return None;
+            }
+            match &var.data {
+                VarData::Simple(name) => Some(Var_::suffix_var(
+                    var.pos,
+                    Var_::simple_var(var.pos, "self".to_string()),
+                    vec![ASTExpSuffix_::arrow_suffix(var.pos, name.clone())],
+                )),
+                VarData::Pointer(pointer_var) => Some(Var_::pointer_var(
+                    var.pos,
+                    if let Some(member) = check_member(pointer_var, semantic_data) {
+                        member
+                    } else {
+                        return None;
+                    },
+                )),
+                VarData::SuffixVar(base_var, suffix_list) => match &base_var.data {
+                    VarData::Simple(name) => {
+                        let mut new_suffix_list =
+                            vec![ASTExpSuffix_::arrow_suffix(var.pos, name.clone())];
+                        new_suffix_list.append(&mut suffix_list.clone());
+                        Some(Var_::suffix_var(
+                            var.pos,
+                            Var_::simple_var(var.pos, "self".to_string()),
+                            new_suffix_list,
+                        ))
+                    }
+                    VarData::Pointer(pointer_var) => {
+                        let mut new_suffix_list =
+                            vec![ASTExpSuffix_::arrow_suffix(var.pos, name.clone())];
+                        new_suffix_list.append(&mut suffix_list.clone());
+                        Some(Var_::suffix_var(
+                            var.pos,
+                            Var_::pointer_var(
+                                var.pos,
+                                if let Some(member) = check_member(&pointer_var, semantic_data) {
+                                    member
+                                } else {
+                                    return None;
+                                },
+                            ),
+                            new_suffix_list,
+                        ))
+                    }
+                    VarData::SuffixVar(var, extra_suffix_list) => {
+                        let mut new_suffix_list =
+                            vec![ASTExpSuffix_::arrow_suffix(var.pos, name.clone())];
+                        new_suffix_list.append(&mut extra_suffix_list.clone());
+                        new_suffix_list.append(&mut suffix_list.clone());
+                        Some(Var_::suffix_var(
+                            var.pos,
+                            Var_::simple_var(var.pos, "self".to_string()),
+                            new_suffix_list,
+                        ))
+                    }
+                    VarData::None => {
+                        return None;
+                    }
+                },
+                VarData::None => {
+                    return None;
+                }
+            }
+        } else {
+            return None;
+        }
+    } else {
+        return None;
     }
 }
 
@@ -191,43 +328,47 @@ fn get_member_of_class(
     var_pos: (usize, usize),
 ) -> (LazeType, Exp) {
     let member_entry = members.get_data(field_name);
-    match member_entry.expect(
-        format_args!(
-            "Could not find member {:?} in class {:?}: {:?}",
-            field_name, class_name, var_pos
-        )
-        .as_str()
-        .unwrap(),
-    ) {
-        EnvEntry::Member(specifier, member_ty, offset) => {
-            if let MemberSpecifier::Public = specifier {
-                (
-                    member_ty.clone(),
-                    Exp_::binop_exp(
-                        ty.to_wasm_type(),
-                        BinOper::Add,
-                        result_exp,
-                        Exp_::consti32_exp(*offset),
-                    ),
-                )
-            } else {
+    if let Some(member_entry_exists) = member_entry {
+        match member_entry_exists {
+            EnvEntry::Member(specifier, member_ty, offset) => {
+                if let MemberSpecifier::Public = specifier {
+                    (
+                        member_ty.clone(),
+                        Exp_::binop_exp(
+                            ty.to_wasm_type(),
+                            BinOper::Add,
+                            result_exp,
+                            Exp_::consti32_exp(*offset),
+                        ),
+                    )
+                } else {
+                    let _ = writeln!(
+                        stderr(),
+                        "Cannot access a member that is not public: {:?}",
+                        var_pos
+                    );
+                    (LazeType_::none_type(), Exp_::none_exp())
+                }
+            }
+            _ => {
                 let _ = writeln!(
                     stderr(),
-                    "Cannot access a member that is not public: {:?}",
-                    var_pos
+                    "{} is not a member of {}.",
+                    field_name,
+                    class_name
                 );
                 (LazeType_::none_type(), Exp_::none_exp())
             }
         }
-        _ => {
-            let _ = writeln!(
-                stderr(),
-                "{} is not a member of {}.",
-                field_name,
-                class_name
-            );
-            (LazeType_::none_type(), Exp_::none_exp())
-        }
+    } else {
+        let _ = writeln!(
+            stderr(),
+            "Could not find member {:?} in class {:?}: {:?}",
+            field_name,
+            class_name,
+            var_pos
+        );
+        return (LazeType_::none_type(), Exp_::none_exp());
     }
 }
 
@@ -249,7 +390,7 @@ fn trans_dot_var(
                 (LazeType_::none_type(), Exp_::none_exp())
             }
         }
-        LazeTypeData::Template(name, type_param) => {
+        LazeTypeData::Template(name, _, type_param) => {
             let template_entry = semantic_data.tenv.get_data(&name);
             if let Some(EnvEntry::Template(_, specific, _, _)) = template_entry {
                 let class_entry = specific.get_data(type_param);

@@ -2,13 +2,13 @@ use super::{exp::ASTExp, stm::Stm};
 
 pub type IfElseList = Vec<IfElse>;
 pub type IfElse = Box<IfElse_>;
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct IfElse_ {
     pub pos: (usize, usize),
     pub data: IfElseData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum IfElseData {
     If(ASTExp, Stm),
     ElseIf(ASTExp, Stm),

@@ -7,7 +7,7 @@ use crate::wasm::il::module::ModuleList;
 use super::semantic_param::SemanticParam;
 use super::trans_dec::trans_dec;
 
-pub fn trans_ast(tree: ASTNode) -> ModuleList {
+pub fn trans_ast(tree: ASTNode) -> (ModuleList, i32) {
     match tree {
         ASTNode::DecList(declist) => {
             let new_list = sort_declist(declist);
@@ -15,7 +15,8 @@ pub fn trans_ast(tree: ASTNode) -> ModuleList {
             for dec in new_list {
                 trans_dec(&dec, None, &mut semantic_param);
             }
-            semantic_param.result_modlist
+            let mem_size = semantic_param.get_mem_size();
+            (semantic_param.result_modlist, mem_size)
         }
         _ => {
             panic!("The parsed ASTNode is not a declist.");
