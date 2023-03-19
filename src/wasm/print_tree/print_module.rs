@@ -24,15 +24,18 @@ pub fn print_module(module: &Module) -> String {
         Module_::Elem(offset, modlist) => {
             let mut result = format_args!("(elem {}", print_exp(&offset)).to_string();
             for module in modlist {
-                if let Module_::Func(index, _, _, _, _) = **module {
+                if let Module_::Func(index, _, _, _, _, _) = **module {
                     result += &index.to_string();
                 }
             }
             result += ")";
             result
         }
-        Module_::Func(_, params, locals, return_type, body) => {
+        Module_::Func(_, params, locals, return_type, body, export_name) => {
             let mut result = "(func ".to_string();
+            if let Some(name) = export_name {
+                result += &format_args!("(export \"{}\")", name).to_string();
+            }
             result += &print_params(params).to_string();
             result += &print_locals(locals).to_string();
             if let WasmType::None = return_type {
@@ -69,7 +72,8 @@ pub fn print_module(module: &Module) -> String {
                 params.clone(),
                 vec![],
                 return_type.clone(),
-                Stm_::none_stm()
+                Stm_::none_stm(),
+                None
             ))
         )
         .to_string(),
@@ -78,7 +82,7 @@ pub fn print_module(module: &Module) -> String {
 
 pub fn print_modprototype(module: &Module) -> String {
     match &**module {
-        Module_::Func(_, params, _, return_type, _) => {
+        Module_::Func(_, params, _, return_type, _, _) => {
             let mut result = "(func ".to_string();
             result += &print_params(params).to_string();
             if let WasmType::None = return_type {
@@ -108,26 +112,27 @@ pub fn print_tree(modulelist: &ModuleList, mem_size: i32) -> String {
     result
 }
 
-pub fn fwrite_tree(modulelist: &ModuleList, mem_size: i32, file_path: &Path) {
+pub fn fwrite_tree(
+    modulelist: &ModuleList,
+    mem_size: i32,
+    file_path: &Path,
+    dist_path: Option<&Path>,
+) {
     let file_name_only = file_path.file_name();
     if let Some(file_name) = file_name_only {
-        let file_to_write =
-            File::create(format_args!("dist/{}.wat", file_name.to_str().unwrap()).to_string());
+        let dist_file = if let Some(dist) = dist_path {
+            format_args!("{}", dist.to_str().unwrap(),).to_string()
+        } else {
+            format_args!("dist/{}.wat", file_name.to_str().unwrap()).to_string()
+        };
+        let file_to_write = File::create(&dist_file);
         if let Ok(mut file) = file_to_write {
             let result = file.write_all(print_tree(modulelist, mem_size).as_bytes());
             if let Err(error) = result {
-                println!(
-                    "Error while writing to file dist/{}.wat: {}",
-                    file_name.to_str().unwrap(),
-                    error
-                );
+                println!("Error while writing to file {}: {}", dist_file, error);
             }
         } else if let Err(error) = file_to_write {
-            println!(
-                "Could not open file dist/{}.wat: {}",
-                file_name.to_str().unwrap(),
-                error
-            );
+            println!("Could not open file {}: {}", dist_file, error);
         }
     } else {
         let _ = writeln!(

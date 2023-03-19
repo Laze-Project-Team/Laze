@@ -40,6 +40,9 @@ fn handle_double_dash(arguments: &mut VecDeque<String>, info: &mut OptionCompile
             if str.starts_with("parser=") {
                 let (_, path) = param.split_at(7);
                 info.parser = Some(LazeParser::new(Path::new(path)));
+            } else if str.starts_with("dist=") {
+                let (_, path) = param.split_at(5);
+                info.dist_file_path = Some(path.to_string());
             } else {
                 println!("Unknown option: --{param}");
             }

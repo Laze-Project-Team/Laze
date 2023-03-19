@@ -2,7 +2,10 @@ use crate::{
     ast::ty::{Type, TypeData},
     wasm::{
         frame::frame::{Frame, FrameType, Frame_},
-        il::{module::ModuleList, stm::StmList},
+        il::{
+            module::{ModuleList, Module_},
+            stm::StmList,
+        },
     },
 };
 
@@ -20,6 +23,11 @@ pub struct SemanticParam {
 
 impl SemanticParam {
     pub fn new() -> SemanticParam {
+        let result_modlist = vec![Module_::jsimport_mod(
+            "memory".to_string(),
+            "std".to_string(),
+            Module_::mem_mod(100),
+        )];
         SemanticParam {
             venv: EntryMap::new(),
             tenv: EntryMap::new(),
@@ -27,7 +35,7 @@ impl SemanticParam {
             func_num: 0,
             frame: vec![],
             temp_stmlist: vec![],
-            result_modlist: vec![],
+            result_modlist,
         }
     }
     pub fn get_mem_size(&self) -> i32 {

@@ -66,12 +66,18 @@ pub fn trans_dec(
                     return_lazetype.clone(),
                 ),
             );
+            let export_name = if func_name == "実行" {
+                Some("main".to_string())
+            } else {
+                None
+            };
             let func_mod = trans_funcdec(
                 func_body,
                 params,
                 &params_lazetype,
                 return_var,
                 &return_lazetype,
+                export_name,
                 semantic_data,
             );
             semantic_data.result_modlist.push(func_mod);
@@ -104,6 +110,7 @@ pub fn trans_dec(
                     vec![],
                     return_lazetype.to_wasm_type(),
                     WASMStm_::none_stm(),
+                    None,
                 ),
             );
             semantic_data.result_modlist.push(import_mod);
@@ -223,6 +230,7 @@ pub fn trans_dec(
                             &params_lazetype,
                             return_var,
                             &return_type,
+                            None,
                             semantic_data,
                         );
                         semantic_data.result_modlist.push(func_mod);

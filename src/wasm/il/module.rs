@@ -9,7 +9,14 @@ pub type Module = Box<Module_>;
 
 #[derive(Debug)]
 pub enum Module_ {
-    Func(i32, WasmTypeList, WasmTypeList, WasmType, Stm),
+    Func(
+        i32,
+        WasmTypeList,
+        WasmTypeList,
+        WasmType,
+        Stm,
+        Option<String>,
+    ),
     JsImport(String, String, Module),
     JsExport(String, i32),
     Global(WasmType, Exp),
@@ -31,8 +38,16 @@ impl Module_ {
         local: WasmTypeList,
         result: WasmType,
         body: Stm,
+        export_name: Option<String>,
     ) -> Module {
-        Box::new(Module_::Func(index, params, local, result, body))
+        Box::new(Module_::Func(
+            index,
+            params,
+            local,
+            result,
+            body,
+            export_name,
+        ))
     }
     pub fn jsimport_mod(name: String, module_name: String, module: Module) -> Module {
         Box::new(Module_::JsImport(name, module_name, module))

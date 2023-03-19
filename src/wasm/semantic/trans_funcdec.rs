@@ -25,6 +25,7 @@ pub fn trans_funcdec(
     params_lazetype: &LazeTypeList,
     return_var: Option<&Var>,
     return_type: &LazeType,
+    export_name: Option<String>,
     semantic_data: &mut SemanticParam,
 ) -> Module {
     //
@@ -77,5 +78,6 @@ pub fn trans_funcdec(
         LazeType_::list_to_wasm_type(&semantic_data.frame.last().unwrap().locals_type),
         return_type.to_wasm_type(),
         WASMStm_::block_stm(result_body),
+        export_name,
     )
 }

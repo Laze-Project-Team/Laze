@@ -13,6 +13,7 @@ pub struct OptionCompilerInfo {
     pub mode: Option<CompilerMode>,
     pub parser: Option<LazeParser>,
     pub program_file_path: Option<String>,
+    pub dist_file_path: Option<String>,
 }
 
 impl OptionCompilerInfo {
@@ -21,6 +22,7 @@ impl OptionCompilerInfo {
             mode: None,
             parser: None,
             program_file_path: None,
+            dist_file_path: None,
         }
     }
 }
@@ -29,6 +31,7 @@ pub struct CompilerInfo {
     pub mode: CompilerMode,
     pub parser: LazeParser,
     pub program_file_path: String,
+    pub dist_file_path: String,
 }
 
 impl CompilerInfo {
@@ -63,6 +66,10 @@ impl CompilerInfo {
                     );
                     exit(1);
                 }
+            },
+            dist_file_path: match info.dist_file_path {
+                Some(path) => path,
+                None => "".to_string(),
             },
         }
     }

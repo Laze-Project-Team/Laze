@@ -22,6 +22,11 @@ fn main() {
     let (module_list, mem_size) = trans_ast(ast);
     println!("{}ms", start.elapsed().as_millis());
     println!("{:?}", module_list);
-    fwrite_tree(&module_list, mem_size, &Path::new(&info.program_file_path));
+    fwrite_tree(
+        &module_list,
+        mem_size,
+        &Path::new(&info.program_file_path),
+        Some(&Path::new(&info.dist_file_path)),
+    );
     println!("{}ms", start.elapsed().as_millis());
 }
