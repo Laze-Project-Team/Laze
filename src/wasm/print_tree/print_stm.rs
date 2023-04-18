@@ -51,10 +51,10 @@ pub fn print_stm(stm: &Stm) -> String {
         Stm_::None => "".to_string(),
         Stm_::Return(return_exp) => format_args!("(return {})", print_exp(return_exp)).to_string(),
         Stm_::SetGlobal(index, exp) => {
-            format_args!("(set_global {} {})", index, print_exp(exp)).to_string()
+            format_args!("(global.set {} {})", index, print_exp(exp)).to_string()
         }
         Stm_::SetLocal(index, exp) => {
-            format_args!("(set_local {} {})", index, print_exp(exp)).to_string()
+            format_args!("(local.set {} {})", index, print_exp(exp)).to_string()
         }
         Stm_::Store(addr, value) => format_args!(
             "({}.store {} {})",

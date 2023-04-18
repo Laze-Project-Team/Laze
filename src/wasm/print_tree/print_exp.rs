@@ -82,7 +82,7 @@ pub fn print_exp(exp: &Exp) -> String {
             WasmType::None => "".to_string(),
         },
         ExpData::GetGlobal(index) => format_args!("(get_global {})", index).to_string(),
-        ExpData::GetLocal(index) => format_args!("(get_local {})", index).to_string(),
+        ExpData::GetLocal(index) => format_args!("(local.get {})", index).to_string(),
         ExpData::IfExp(test_exp, then_exp, else_exp) => format_args!(
             "(if({}) {} (then {}) (else {}))",
             exp.ty.to_string(),

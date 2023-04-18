@@ -1,0 +1,5 @@
+{
+  "version": "0.0.0",
+  "title": "Initial Laze Compiler",
+  "description": "Created the compiler, and can output WAST code."
+}
