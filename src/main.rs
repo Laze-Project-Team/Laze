@@ -8,6 +8,7 @@ use crate::wasm::{print_tree::print_module::fwrite_tree, semantic::trans_ast::tr
 
 pub mod ast;
 pub mod command_handler;
+pub mod error_handler;
 pub mod laze_parser;
 pub mod util;
 pub mod wasm;
