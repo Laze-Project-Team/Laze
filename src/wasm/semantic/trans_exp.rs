@@ -9,6 +9,7 @@ use crate::{
         op::Oper,
         var::{Var, VarData},
     },
+    error_handler::error::CompileError_,
     wasm::{
         frame::frame::FrameAccess,
         il::{
@@ -116,7 +117,7 @@ pub fn trans_exp(exp: &ASTExp, semantic_data: &mut SemanticParam) -> WasmExpTy {
         }
         ASTExpData::UnaryOp(oper_list, calc_exp) => {
             if oper_list.len() > 1 {
-                let _ = writeln!(stderr(), "Warning: Laze doesn't support multiple unary operators, put parantheses around the expression: {:?}", exp.pos);
+                semantic_data.errors.push(CompileError_::new_error(exp.pos, "Warning: Laze doesn't support multiple unary operators, put parantheses around the expression".to_string()));
                 trans_unaryop_exp(&oper_list[0], calc_exp, semantic_data)
             } else if oper_list.len() == 1 {
                 trans_unaryop_exp(&oper_list[0], calc_exp, semantic_data)
@@ -196,10 +197,11 @@ pub fn trans_arrayexp_to_stm(
         for exp in flat_explist.iter().skip(1) {
             let elem = trans_exp(exp, semantic_data);
             if first_elem.ty != elem.ty {
-                let _ = writeln!(
-                    stderr(),
+                semantic_data.errors.push(CompileError_::new_error(
+                    exp.pos,
                     "This expression's type does not match with the first element's type."
-                );
+                        .to_string(),
+                ))
             } else {
                 let access = semantic_data
                     .frame
@@ -259,11 +261,10 @@ pub fn trans_binop_exp(
                 Exp_::binop_exp(wasm_type, BinOper::from_ast(&oper), lhs, rhs),
             ),
             _ => {
-                let _ = writeln!(
-                    stderr(),
-                    "This operator is not functional right now: {:?}",
-                    right.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    right.pos,
+                    "This operator is not functional right now".to_string(),
+                ));
                 WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
             }
         }
@@ -286,20 +287,18 @@ pub fn trans_unaryop_exp(
                     let wasm_ty = pointer_ty.to_wasm_type();
                     WasmExpTy::new_exp(pointer_ty, Exp_::load_exp(wasm_ty, result_exp))
                 } else {
-                    let _ = writeln!(
-                        stderr(),
-                        "Cannot dereference a non-pointer type: {:?}",
-                        exp.pos
-                    );
+                    semantic_data.errors.push(CompileError_::new_error(
+                        exp.pos,
+                        "Cannot dereference a non-pointer type.".to_string(),
+                    ));
                     WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
                 }
             }
             _ => {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot dereference a non-variable expression: {:?}",
-                    exp.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    exp.pos,
+                    "Cannot dereference a non-variable expression.".to_string(),
+                ));
                 WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
             }
         },
@@ -307,11 +306,10 @@ pub fn trans_unaryop_exp(
             // handle non-framed variables
             ASTExpData::Var(var) => trans_suffix_var_to_addr(&var, &vec![], semantic_data),
             _ => {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot get the address of a non-variable expression: {:?}",
-                    exp.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    exp.pos,
+                    "Cannot get the address of a non-variable expression.".to_string(),
+                ));
                 WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
             }
         },
@@ -328,16 +326,18 @@ pub fn trans_unaryop_exp(
                     ),
                 )
             } else {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot get a Not expression of non-boolean type: {:?}",
-                    exp.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    exp.pos,
+                    "Cannot get a Not expression of non-boolean type.".to_string(),
+                ));
                 WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
             }
         }
         _ => {
-            let _ = writeln!(stderr(), "Not a unary operator: {:?}", exp.pos);
+            semantic_data.errors.push(CompileError_::new_error(
+                exp.pos,
+                "Not a unary operator.".to_string(),
+            ));
             WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
         }
     }

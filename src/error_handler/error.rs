@@ -4,16 +4,16 @@ pub type CompileError = Box<CompileError_>;
 
 #[derive(Debug)]
 pub enum CompileError_ {
-    Error((i32, i32), String),
-    Warning((i32, i32), String),
+    Error((usize, usize), String),
+    Warning((usize, usize), String),
 }
 
 impl CompileError_ {
-    pub fn new_error(pos: (i32, i32), message: String) -> CompileError {
+    pub fn new_error(pos: (usize, usize), message: String) -> CompileError {
         Box::new(CompileError_::Error(pos, message))
     }
 
-    pub fn new_warning(pos: (i32, i32), message: String) -> CompileError {
+    pub fn new_warning(pos: (usize, usize), message: String) -> CompileError {
         Box::new(CompileError_::Warning(pos, message))
     }
 

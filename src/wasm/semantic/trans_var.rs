@@ -7,6 +7,7 @@ use crate::{
         ty::TypeData,
         var::{Var, VarData, Var_},
     },
+    error_handler::error::CompileError_,
     wasm::{
         frame::frame::FrameType,
         il::{
@@ -39,7 +40,10 @@ pub fn trans_right_var(var: &Var, semantic_data: &mut SemanticParam) -> WasmExpT
                     if let Some(checked_var_exists) = checked_var {
                         return trans_right_var(&checked_var_exists, semantic_data);
                     } else {
-                        let _ = writeln!(stderr(), "{:?} is not a variable: {:?}", name, var.pos);
+                        semantic_data.errors.push(CompileError_::new_error(
+                            var.pos,
+                            format_args!("{:?} is not a variable.", name).to_string(),
+                        ));
                         WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
                     }
                 }
@@ -48,18 +52,19 @@ pub fn trans_right_var(var: &Var, semantic_data: &mut SemanticParam) -> WasmExpT
                 if let Some(checked_var_exists) = checked_var {
                     return trans_right_var(&checked_var_exists, semantic_data);
                 } else {
-                    let _ = writeln!(
-                        stderr(),
-                        "Could not find variable {:?}: {:?}",
-                        name,
-                        var.pos
-                    );
+                    semantic_data.errors.push(CompileError_::new_error(
+                        var.pos,
+                        format_args!("Could not find variable {:?}", name).to_string(),
+                    ));
                     WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
                 }
             }
         }
         VarData::None => {
-            let _ = writeln!(stderr(), "Not a variable: {:?}", var.pos);
+            semantic_data.errors.push(CompileError_::new_error(
+                var.pos,
+                format_args!("Not a variable.").to_string(),
+            ));
             WasmExpTy::new_exp(LazeType_::none_type(), Exp_::none_exp())
         }
     }
@@ -90,12 +95,10 @@ pub fn trans_suffix_var_to_addr(
                                   // ),
             ),
             _ => {
-                let _ = writeln!(
-                    stderr(),
-                    "{} is not a variable nor a function: {:?}",
-                    name,
-                    var.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    var.pos,
+                    format_args!("{} is not a variable nor a function.", name).to_string(),
+                ));
                 (LazeType_::none_type(), Exp_::none_exp())
             }
         };
@@ -147,12 +150,11 @@ pub fn trans_suffix_var_to_addr(
                             );
                         }
                     } else {
-                        let _ = writeln!(
-                            stderr(),
-                            "Cannot call {:?} because it is not a function: {:?}",
-                            name,
-                            var.pos
-                        );
+                        semantic_data.errors.push(CompileError_::new_error(
+                            var.pos,
+                            format_args!("Cannot call {:?} because it is not a function", name)
+                                .to_string(),
+                        ));
                     }
                 }
                 SuffixData::Arrow(field) => match ty.data {
@@ -163,12 +165,14 @@ pub fn trans_suffix_var_to_addr(
                             trans_dot_var(field, &ty, result_exp, semantic_data, var.pos, name);
                     }
                     _ => {
-                        let _ = writeln!(
-                            stderr(),
-                            "To use the arrow operator, {:?} needs to be a pointer: {:?}",
-                            name,
-                            var.pos
-                        );
+                        semantic_data.errors.push(CompileError_::new_error(
+                            var.pos,
+                            format_args!(
+                                "To use the arrow operator, {:?} needs to be a pointer.",
+                                name
+                            )
+                            .to_string(),
+                        ));
                     }
                 },
             }
@@ -179,11 +183,10 @@ pub fn trans_suffix_var_to_addr(
         if let Some(checked_var_exists) = checked_var {
             return trans_suffix_var_to_addr(&checked_var_exists, suffixlist, semantic_data);
         } else {
-            let _ = writeln!(
-                stderr(),
-                "Could not find a variable or function named {:?}",
-                name
-            );
+            semantic_data.errors.push(CompileError_::new_error(
+                var.pos,
+                format_args!("Could not find a variable or function named {:?}", name).to_string(),
+            ));
             WasmExpTy::none()
         }
     }
@@ -386,7 +389,10 @@ fn trans_dot_var(
             if let Some(EnvEntry::Class(_, members, _)) = class_entry {
                 get_member_of_class(&ty, result_exp, &members, &field, &name, var_pos)
             } else {
-                let _ = writeln!(stderr(), "{:?} is not a class: {:?}", name, var_pos);
+                semantic_data.errors.push(CompileError_::new_error(
+                    var_pos,
+                    format_args!("{:?} is not a class", name).to_string(),
+                ));
                 (LazeType_::none_type(), Exp_::none_exp())
             }
         }
@@ -397,22 +403,29 @@ fn trans_dot_var(
                 if let Some(EnvEntry::Class(_, members, _)) = class_entry {
                     get_member_of_class(&ty, result_exp, members, &field, &name, var_pos)
                 } else {
-                    let _ = writeln!(stderr(), "{:?} is not a class: {:?}", name, var_pos);
+                    semantic_data.errors.push(CompileError_::new_error(
+                        var_pos,
+                        format_args!("{:?} is not a class", name).to_string(),
+                    ));
                     (LazeType_::none_type(), Exp_::none_exp())
                 }
             } else {
-                let _ = writeln!(stderr(), "{:?} is not a template: {:?}", name, var_pos);
+                semantic_data.errors.push(CompileError_::new_error(
+                    var_pos,
+                    format_args!("{:?} is not a template", name).to_string(),
+                ));
                 (LazeType_::none_type(), Exp_::none_exp())
             }
         }
         _ => {
-            let _ = writeln!(
-                stderr(),
-                "Cannot take field {:?} of {:?} because it is a non-class type: {:?}",
-                field,
-                name,
-                var_pos
-            );
+            semantic_data.errors.push(CompileError_::new_error(
+                var_pos,
+                format_args!(
+                    "Cannot take field {:?} of {:?} because it is a non-class type",
+                    field, name
+                )
+                .to_string(),
+            ));
             (LazeType_::none_type(), Exp_::none_exp())
         }
     }

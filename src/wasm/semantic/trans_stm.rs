@@ -16,6 +16,7 @@ use crate::{
         ty::Type_,
         var::{Var, VarData, Var_},
     },
+    error_handler::error::CompileError_,
     wasm::{
         frame::frame::FrameAccess,
         il::{
@@ -74,11 +75,10 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
             if semantic_data.loop_index > 1 {
                 new_stm = Stm_::break_stm(semantic_data.loop_index);
             } else {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot continue, because this statement is not in a loop: {:?}",
-                    stm.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    stm.pos,
+                    "Cannot continue, because this statement is not in a loop.".to_string(),
+                ));
                 new_stm = Stm_::none_stm();
             }
         }
@@ -86,11 +86,10 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
             if semantic_data.loop_index > 1 {
                 new_stm = Stm_::break_stm(semantic_data.loop_index - 1);
             } else {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot break out, because this statement is not in a loop: {:?}",
-                    stm.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    stm.pos,
+                    "Cannot break out, because this statement is not in a loop.".to_string(),
+                ));
                 new_stm = Stm_::none_stm();
             }
         }
@@ -116,15 +115,17 @@ pub fn trans_stm(stm: &ASTStm, semantic_data: &mut SemanticParam) -> Stm {
                 );
             }
             DecData::Func(..) => {
-                let _ = writeln!(
-                    stderr(),
-                    "Cannot define functions inside function body: {:?}",
-                    dec.pos
-                );
+                semantic_data.errors.push(CompileError_::new_error(
+                    stm.pos,
+                    "Cannot define functions inside function body.".to_string(),
+                ));
                 new_stm = Stm_::none_stm();
             }
             _ => {
-                let _ = writeln!(stderr(), "Please declare a variable: {:?}", dec.pos);
+                semantic_data.errors.push(CompileError_::new_error(
+                    stm.pos,
+                    "Please declare a variable.".to_string(),
+                ));
                 new_stm = Stm_::none_stm();
             }
         },
@@ -212,8 +213,10 @@ pub fn trans_if_stm(
                         result_stm.set_if_else_body(trans_stm(&else_body, semantic_data), stm_pos);
                     }
                     IfElseData::If(..) => {
-                        let _ =
-                            writeln!(stderr(), "Do not connect if statements: {:?}", ifelse.pos);
+                        semantic_data.errors.push(CompileError_::new_error(
+                            stm_pos,
+                            "Do not connect if statements.".to_string(),
+                        ));
                     }
                 }
             }
@@ -311,7 +314,10 @@ pub fn trans_assign_stm(
                         }
                     }
                     FrameAccess::None => {
-                        let _ = writeln!(stderr(), "{:?} is not in scope: {:?}", name, var.pos);
+                        semantic_data.errors.push(CompileError_::new_error(
+                            var.pos,
+                            "Variable is not in scope.".to_string(),
+                        ));
                         new_stm = Stm_::none_stm();
                     }
                 }
@@ -325,7 +331,10 @@ pub fn trans_assign_stm(
                         semantic_data,
                     );
                 } else {
-                    let _ = writeln!(stderr(), "{:?} is not a variable: {:?}", name, var.pos);
+                    semantic_data.errors.push(CompileError_::new_error(
+                        var.pos,
+                        format_args!("{:?} is not a variable.", name).to_string(),
+                    ));
                     new_stm = Stm_::none_stm();
                 }
             }

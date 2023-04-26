@@ -1,5 +1,6 @@
 use crate::{
     ast::ty::{Type, TypeData},
+    error_handler::error::CompileError,
     wasm::{
         frame::frame::{Frame, FrameType, Frame_},
         il::{
@@ -19,6 +20,7 @@ pub struct SemanticParam {
     pub frame: Vec<Frame>,
     pub temp_stmlist: StmList,
     pub result_modlist: ModuleList,
+    pub errors: Vec<CompileError>,
 }
 
 impl SemanticParam {
@@ -36,6 +38,7 @@ impl SemanticParam {
             frame: vec![],
             temp_stmlist: vec![],
             result_modlist,
+            errors: vec![],
         }
     }
     pub fn get_mem_size(&self) -> i32 {

@@ -3,12 +3,15 @@ use std::{
     mem::swap,
 };
 
-use crate::ast::{
-    exp::{ASTExpData, ASTExpList},
-    field::{FieldData, FieldList},
-    suffix::SuffixData,
-    ty::{Type, TypeData, TypeList, Type_},
-    var::{Var, VarData},
+use crate::{
+    ast::{
+        exp::{ASTExpData, ASTExpList},
+        field::{FieldData, FieldList},
+        suffix::SuffixData,
+        ty::{Type, TypeData, TypeList, Type_},
+        var::{Var, VarData},
+    },
+    error_handler::error::CompileError_,
 };
 
 use super::{
@@ -32,11 +35,10 @@ pub fn trans_ty(ty: &Type, semantic_data: &mut SemanticParam) -> LazeType {
                 ASTExpData::Int(int) => int.parse::<i32>().unwrap(),
                 ASTExpData::Short(int) => int.parse::<i32>().unwrap(),
                 _ => {
-                    let _ = writeln!(
-                        stderr(),
-                        "The size of this array is not a constant: {:?}",
-                        size.pos
-                    );
+                    semantic_data.errors.push(CompileError_::new_error(
+                        size.pos,
+                        "The size of this array is not a constant.".to_string(),
+                    ));
                     0
                 }
             };
@@ -83,18 +85,24 @@ pub fn trans_ty(ty: &Type, semantic_data: &mut SemanticParam) -> LazeType {
                                     .add_data(type_params_str[index].clone(), poly_entry);
                             }
                         } else if type_params.len() < type_params_str.len() {
-                            let _ = writeln!(
-                                stderr(),
-                                "Type parameter is missing: {:?}",
-                                type_params_str[type_params.len()]
-                            );
+                            semantic_data.errors.push(CompileError_::new_error(
+                                ty.pos,
+                                format_args!(
+                                    "Type parameter is missing: {:?}",
+                                    type_params_str[type_params.len()]
+                                )
+                                .to_string(),
+                            ));
                             return LazeType_::none_type();
                         } else if type_params.len() > type_params_str.len() {
-                            let _ = writeln!(
-                                stderr(),
-                                "There are too many type parameters: {:?}",
-                                type_params[type_params_str.len()]
-                            );
+                            semantic_data.errors.push(CompileError_::new_error(
+                                ty.pos,
+                                format_args!(
+                                    "There are too many type parameters: {:?}",
+                                    type_params_str[type_params.len()]
+                                )
+                                .to_string(),
+                            ));
                             return LazeType_::none_type();
                         }
                         swap(&mut semantic_data.venv, &mut template_venv);
@@ -123,6 +131,10 @@ pub fn trans_ty(ty: &Type, semantic_data: &mut SemanticParam) -> LazeType {
             LazeType_::none_type()
         }
         TypeData::None => {
+            semantic_data.errors.push(CompileError_::new_error(
+                ty.pos,
+                "Type is not valid.".to_string(),
+            ));
             let _ = writeln!(stderr(), "Type is not valid: {:?}", ty.pos);
             LazeType_::none_type()
         }
@@ -158,11 +170,10 @@ pub fn trans_result<'a>(
     semantic_data: &mut SemanticParam,
 ) -> (Option<&'a Var>, LazeType) {
     let return_field = if result_list.len() > 1 {
-        let _ = writeln!(
-            stderr(),
-            "Laze does not support multiple return values: {:?}",
-            pos
-        );
+        semantic_data.errors.push(CompileError_::new_error(
+            pos,
+            "Laze does not support multiple return values.".to_string(),
+        ));
         &result_list[0].data
     } else if result_list.len() == 1 {
         &result_list[0].data
